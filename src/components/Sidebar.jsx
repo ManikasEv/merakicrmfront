@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom'
+import { LANGUAGES, T } from '../lib/i18n'
 
 const NAV = [
   {
     to: '/dashboard',
-    label: 'Dashboard',
+    key: 'dashboard',
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -13,7 +14,7 @@ const NAV = [
   },
   {
     to: '/reservations',
-    label: 'Reservierungen',
+    key: 'reservations',
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -23,19 +24,21 @@ const NAV = [
   },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ lang, setLang }) {
+  const t = T[lang]
+
   return (
     <aside className="w-56 bg-[#0d1b2c] border-r border-white/[0.06] flex flex-col shrink-0">
 
       {/* Brand */}
       <div className="px-6 py-6 border-b border-white/[0.06]">
         <p className="font-display italic text-[#7aafd4] text-2xl tracking-widest">MERAKI</p>
-        <p className="text-white/20 text-[9px] tracking-[0.35em] uppercase mt-1">CRM · Admin</p>
+        <p className="text-white/20 text-[9px] tracking-[0.35em] uppercase mt-1">{t.app.admin}</p>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
-        {NAV.map(({ to, label, icon }) => (
+        {NAV.map(({ to, key, icon }) => (
           <NavLink
             key={to}
             to={to}
@@ -48,10 +51,29 @@ export default function Sidebar() {
             }
           >
             {icon}
-            {label}
+            {t.app[key]}
           </NavLink>
         ))}
       </nav>
+
+      <div className="px-4 pb-4 space-y-2">
+        <p className="text-white/20 text-[9px] tracking-[0.3em] uppercase px-2">Language</p>
+        <div className="grid grid-cols-3 gap-1.5">
+          {LANGUAGES.map((l) => (
+            <button
+              key={l.code}
+              onClick={() => setLang(l.code)}
+              className={`px-2 py-2 text-[10px] tracking-[0.12em] uppercase border transition-colors ${
+                lang === l.code
+                  ? 'bg-[#314f6f]/45 text-[#7aafd4] border-[#314f6f]/50'
+                  : 'bg-white/[0.03] text-white/45 border-white/10 hover:text-white/70 hover:border-white/20'
+              }`}
+            >
+              {l.code}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Footer */}
       <div className="px-6 py-5 border-t border-white/[0.05]">
