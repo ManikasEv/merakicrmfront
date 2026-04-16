@@ -82,6 +82,8 @@ export default function Reservations() {
   const [slotTime, setSlotTime] = useState('19:00')
   const [slotInfo, setSlotInfo] = useState(null)
   const [slotLoading, setSlotLoading] = useState(false)
+  const [opsNowSlot, setOpsNowSlot] = useState(null)
+  const [opsNextSlot, setOpsNextSlot] = useState(null)
 
   const load = () => {
     setLoading(true)
@@ -116,6 +118,27 @@ export default function Reservations() {
       cancelled = true
     }
   }, [slotDate, slotTime])
+
+  useEffect(() => {
+    const now = new Date()
+    const day = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+    const thisHour = `${String(now.getHours()).padStart(2, '0')}:00`
+    const nextHourDate = new Date(now.getTime() + 60 * 60 * 1000)
+    const nextHour = `${String(nextHourDate.getHours()).padStart(2, '0')}:00`
+
+    Promise.all([
+      fetchJson(`${API}/reservations/slot-load?date=${encodeURIComponent(day)}&time=${encodeURIComponent(thisHour)}`),
+      fetchJson(`${API}/reservations/slot-load?date=${encodeURIComponent(day)}&time=${encodeURIComponent(nextHour)}`),
+    ])
+      .then(([nowSlot, nextSlot]) => {
+        setOpsNowSlot(nowSlot)
+        setOpsNextSlot(nextSlot)
+      })
+      .catch(() => {
+        setOpsNowSlot(null)
+        setOpsNextSlot(null)
+      })
+  }, [all])
 
   const cancel = async (id) => {
     try {
@@ -204,6 +227,9 @@ export default function Reservations() {
   const avgGuests = filtered.length
     ? (filtered.reduce((sum, r) => sum + r.guests_num, 0) / filtered.length).toFixed(1)
     : '0.0'
+  const nextUpcoming = normalized
+    .filter((r) => r.status !== 'cancelled' && !Number.isNaN(r.reservation_datetime.getTime()) && r.reservation_datetime >= new Date())
+    .sort((a, b) => a.reservation_datetime - b.reservation_datetime)[0] || null
 
   const inputCls =
     'bg-white/[0.08] border border-white/20 text-white text-xs px-3 py-2 outline-none ' +
@@ -277,6 +303,38 @@ export default function Reservations() {
           {!slotLoading && slotInfo && !slotInfo.can_accept_request && (
             <p className="text-xs text-amber-300/85 mt-1">{t.reservations.slotFullHint}</p>
           )}
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-3">
+        <div className="border border-white/15 bg-[#101c2d] px-4 py-3">
+          <p className="text-[10px] tracking-[0.3em] uppercase text-white/45">{t.reservations.nowSlot}</p>
+          <p className="text-lg text-emerald-300 font-semibold mt-1">
+            {opsNowSlot ? `${opsNowSlot.current_guests}/${SLOT_CAP_GUESTS}` : '—'}
+          </p>
+          <p className="text-[11px] text-white/60">{opsNowSlot?.time || '—'}</p>
+        </div>
+        <div className="border border-white/15 bg-[#101c2d] px-4 py-3">
+          <p className="text-[10px] tracking-[0.3em] uppercase text-white/45">{t.reservations.nextHourSlot}</p>
+          <p className="text-lg text-[#8fd0ff] font-semibold mt-1">
+            {opsNextSlot ? `${opsNextSlot.current_guests}/${SLOT_CAP_GUESTS}` : '—'}
+          </p>
+          <p className="text-[11px] text-white/60">{opsNextSlot?.time || '—'}</p>
+        </div>
+        <div className="border border-white/15 bg-[#101c2d] px-4 py-3">
+          <p className="text-[10px] tracking-[0.3em] uppercase text-white/45">{t.reservations.nextReservation}</p>
+          <p className="text-sm text-white mt-1">
+            {nextUpcoming
+              ? `${nextUpcoming.reservation_time_hhmm} · ${nextUpcoming.full_name} (${nextUpcoming.guests_num})`
+              : t.dashboard.noUpcoming}
+          </p>
+          <p className="text-[11px] text-white/60">
+            {nextUpcoming
+              ? new Date(nextUpcoming.reservation_date_iso + 'T12:00:00').toLocaleDateString(locale, {
+                weekday: 'short', day: '2-digit', month: '2-digit',
+              })
+              : '—'}
+          </p>
         </div>
       </div>
 

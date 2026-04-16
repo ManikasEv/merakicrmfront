@@ -97,6 +97,9 @@ export const T = {
       slotTime: 'Ώρα slot',
       slotSummary: 'Πελάτες στο επιλεγμένο slot',
       slotFullHint: 'Το slot είναι πλήρες. Προτείνετε άλλο slot ή τηλεφωνική κράτηση.',
+      nowSlot: 'Τώρα',
+      nextHourSlot: 'Επόμενη ώρα',
+      nextReservation: 'Επόμενη κράτηση',
     },
     clients: {
       panel: 'Πελατολόγιο',
@@ -205,6 +208,9 @@ export const T = {
       slotTime: 'Slot time',
       slotSummary: 'Clients in selected slot',
       slotFullHint: 'This slot is full. Suggest another slot or phone reservation.',
+      nowSlot: 'Now',
+      nextHourSlot: 'Next hour',
+      nextReservation: 'Next reservation',
     },
     clients: {
       panel: 'Customer Base',
@@ -313,6 +319,9 @@ export const T = {
       slotTime: 'Slot-Uhrzeit',
       slotSummary: 'Kunden im gewählten Slot',
       slotFullHint: 'Dieser Slot ist voll. Anderen Slot oder Telefonreservierung vorschlagen.',
+      nowSlot: 'Jetzt',
+      nextHourSlot: 'Nächste Stunde',
+      nextReservation: 'Nächste Reservierung',
     },
     clients: {
       panel: 'Kundenbasis',

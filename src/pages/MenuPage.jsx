@@ -149,6 +149,15 @@ export default function MenuPage() {
             <div key={category} className="border border-white/15 bg-[#101c2d]">
               <div className="px-4 py-3 border-b border-white/10 text-white font-medium">{category}</div>
               <div className="p-4 space-y-2">
+                <div className="hidden md:grid md:grid-cols-12 gap-2 items-center px-1 pb-1">
+                  <p className="md:col-span-2 text-[9px] tracking-[0.3em] uppercase text-white/45">{t.menu.name}</p>
+                  <p className="md:col-span-4 text-[9px] tracking-[0.3em] uppercase text-white/45">{t.menu.description}</p>
+                  <p className="md:col-span-2 text-[9px] tracking-[0.3em] uppercase text-white/45">{t.menu.category}</p>
+                  <p className="md:col-span-1 text-[9px] tracking-[0.3em] uppercase text-white/45">{t.menu.price}</p>
+                  <p className="md:col-span-1 text-[9px] tracking-[0.3em] uppercase text-white/45">{t.menu.order}</p>
+                  <p className="md:col-span-1 text-[9px] tracking-[0.3em] uppercase text-white/45">{t.menu.active}</p>
+                  <p className="md:col-span-1 text-[9px] tracking-[0.3em] uppercase text-white/45">{t.common.action}</p>
+                </div>
                 {rows.map((item) => (
                   <div key={item.id} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center">
                     <input className={inputCls + ' md:col-span-2'} value={item.name || ''} onChange={(e) => setItemField(item.id, 'name', e.target.value)} />
