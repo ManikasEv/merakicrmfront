@@ -4,6 +4,16 @@ import { T, localeFor } from '../lib/i18n'
 import { fetchJson } from '../lib/api'
 
 const API = import.meta.env.VITE_API_BASE || 'https://merakibackend.vercel.app/api'
+const SLOT_CAP_GUESTS = 50
+const SLOT_TIMES = ['11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30']
+
+function todayIso() {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
 
 const STATUS_CLS = {
   confirmed: 'bg-emerald-500/20 text-emerald-200 border-emerald-400/40',
@@ -68,6 +78,10 @@ export default function Reservations() {
   const [confirmCancel, setConfirmCancel] = useState(null)
   const [selectedReservation, setSelectedReservation] = useState(null)
   const [savingRating, setSavingRating] = useState(false)
+  const [slotDate, setSlotDate] = useState(todayIso())
+  const [slotTime, setSlotTime] = useState('19:00')
+  const [slotInfo, setSlotInfo] = useState(null)
+  const [slotLoading, setSlotLoading] = useState(false)
 
   const load = () => {
     setLoading(true)
@@ -78,6 +92,30 @@ export default function Reservations() {
   }
 
   useEffect(load, [t.reservations.loadErr])
+
+  useEffect(() => {
+    if (!slotDate || !slotTime) {
+      setSlotInfo(null)
+      return
+    }
+
+    let cancelled = false
+    setSlotLoading(true)
+    fetchJson(`${API}/reservations/slot-load?date=${encodeURIComponent(slotDate)}&time=${encodeURIComponent(slotTime)}`)
+      .then((payload) => {
+        if (!cancelled) setSlotInfo(payload)
+      })
+      .catch(() => {
+        if (!cancelled) setSlotInfo(null)
+      })
+      .finally(() => {
+        if (!cancelled) setSlotLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [slotDate, slotTime])
 
   const cancel = async (id) => {
     try {
@@ -198,12 +236,12 @@ export default function Reservations() {
         </div>
       </div>
 
-      <div className="border border-white/15 bg-[#101c2d] p-5 grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="border border-white/15 bg-[#101c2d] p-5 grid grid-cols-2 md:grid-cols-6 gap-3">
         <input
           placeholder={t.reservations.search}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className={inputCls + ' col-span-2 md:col-span-1'}
+          className={inputCls + ' col-span-2 md:col-span-2'}
         />
         <select value={statusF} onChange={(e) => setStatusF(e.target.value)} className={inputCls + ' bg-[#101c2d] cursor-pointer'}>
           <option value="all">{t.reservations.statusAll}</option>
@@ -212,6 +250,34 @@ export default function Reservations() {
         </select>
         <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={inputCls + ' [color-scheme:dark]'} placeholder={t.reservations.from} />
         <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={inputCls + ' [color-scheme:dark]'} placeholder={t.reservations.to} />
+        <input
+          type="date"
+          value={slotDate}
+          onChange={(e) => setSlotDate(e.target.value)}
+          className={inputCls + ' [color-scheme:dark]'}
+          title={t.reservations.slotDate}
+        />
+        <select
+          value={slotTime}
+          onChange={(e) => setSlotTime(e.target.value)}
+          className={inputCls + ' bg-[#101c2d] cursor-pointer'}
+          title={t.reservations.slotTime}
+        >
+          {SLOT_TIMES.map((time) => (
+            <option key={time} value={time}>{time}</option>
+          ))}
+        </select>
+        <div className="col-span-2 md:col-span-6 border border-white/10 bg-white/[0.03] px-4 py-3">
+          <p className="text-[10px] tracking-[0.28em] uppercase text-white/40">{t.reservations.slotControl}</p>
+          <p className={`text-sm mt-1 ${slotInfo?.can_accept_request ? 'text-emerald-300' : 'text-amber-300'}`}>
+            {slotLoading && t.common.loading}
+            {!slotLoading && slotInfo && `${t.reservations.slotSummary}: ${slotInfo.current_guests}/${SLOT_CAP_GUESTS} ${t.common.people}`}
+            {!slotLoading && !slotInfo && t.dashboard.slotUnavailable}
+          </p>
+          {!slotLoading && slotInfo && !slotInfo.can_accept_request && (
+            <p className="text-xs text-amber-300/85 mt-1">{t.reservations.slotFullHint}</p>
+          )}
+        </div>
       </div>
 
       {error && (
