@@ -65,16 +65,23 @@ export default function Dashboard() {
 
   const [stats, setStats]         = useState(null)
   const [upcoming, setUpcoming]   = useState([])
+  const [slotNow, setSlotNow]     = useState(null)
   const [loading, setLoading]     = useState(true)
   const [error, setError]         = useState('')
 
   useEffect(() => {
+    const now = new Date()
+    const day = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+    const hourSlot = `${String(now.getHours()).padStart(2, '0')}:00`
+
     Promise.all([
       fetchJson(`${API}/stats`),
       fetchJson(`${API}/reservations`),
+      fetchJson(`${API}/reservations/slot-load?date=${encodeURIComponent(day)}&time=${encodeURIComponent(hourSlot)}`),
     ])
-      .then(([s, res]) => {
+      .then(([s, res, slot]) => {
         setStats(s)
+        setSlotNow(slot)
         // Normalize to stable datetime regardless of backend date shape.
         const normalized = res.map((r) => {
           const reservationDate = typeof r.reservation_date === 'string'
@@ -122,8 +129,6 @@ export default function Dashboard() {
   )
 
   const { summary, monthly, byHour, byWeekday } = stats
-  const totalGuestsUpcoming = upcoming.reduce((sum, r) => sum + (Number(r.guests) || 0), 0)
-
   const today = new Date().toLocaleDateString(locale, {
     weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
   })
@@ -162,7 +167,13 @@ export default function Dashboard() {
         <StatCard label={t.dashboard.today}       value={summary.today}             sub={t.dashboard.totalReservations} accent />
         <StatCard label={t.dashboard.thisMonth}   value={summary.this_month}        sub={t.dashboard.totalReservations} />
         <StatCard label={t.dashboard.monthGuests} value={summary.guests_this_month} sub={t.dashboard.totalPeople} />
-        <StatCard label={t.dashboard.nextBookings} value={upcoming.length}          sub={`${totalGuestsUpcoming} ${t.dashboard.plannedGuests}`} />
+        <StatCard
+          label={t.dashboard.currentSlot}
+          value={slotNow ? `${slotNow.current_guests}/${slotNow.slot_cap_guests}` : '—'}
+          sub={slotNow
+            ? `${slotNow.time} · ${t.dashboard.remaining}: ${slotNow.remaining_guests}`
+            : t.dashboard.slotUnavailable}
+        />
       </div>
 
       {/* Monthly chart */}
