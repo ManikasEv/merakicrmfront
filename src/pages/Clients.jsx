@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { T, localeFor } from '../lib/i18n'
 import { fetchJson } from '../lib/api'
+import { useAutoRefresh } from '../lib/useAutoRefresh'
 
 const API = import.meta.env.VITE_API_BASE || 'https://merakibackend.vercel.app/api'
 
@@ -29,15 +30,25 @@ export default function Clients() {
   const [search, setSearch] = useState('')
   const [savingId, setSavingId] = useState(null)
 
-  const load = () => {
-    setLoading(true)
+  const load = useCallback(({ silent = false } = {}) => {
+    if (!silent) setLoading(true)
     fetchJson(`${API}/clients`)
-      .then(setRows)
-      .catch((e) => setError(e.message || t.clients.loadErr))
-      .finally(() => setLoading(false))
-  }
+      .then((clients) => {
+        setRows(clients)
+        if (!silent) setError('')
+      })
+      .catch((e) => {
+        if (!silent) setError(e.message || t.clients.loadErr)
+      })
+      .finally(() => {
+        if (!silent) setLoading(false)
+      })
+  }, [t.clients.loadErr])
 
-  useEffect(load, [t.clients.loadErr])
+  useEffect(() => {
+    load()
+  }, [load])
+  useAutoRefresh(load, { intervalMs: 15000 })
 
   const saveRating = async (clientId, rating) => {
     if (!clientId) return

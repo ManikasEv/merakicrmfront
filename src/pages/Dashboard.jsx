@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import {
   BarChart, Bar,
@@ -7,6 +7,7 @@ import {
 } from 'recharts'
 import { T, localeFor, monthShort } from '../lib/i18n'
 import { fetchJson } from '../lib/api'
+import { useAutoRefresh } from '../lib/useAutoRefresh'
 
 const API = import.meta.env.VITE_API_BASE || 'https://merakibackend.vercel.app/api'
 
@@ -69,10 +70,12 @@ export default function Dashboard() {
   const [loading, setLoading]     = useState(true)
   const [error, setError]         = useState('')
 
-  useEffect(() => {
+  const load = useCallback(({ silent = false } = {}) => {
     const now = new Date()
     const day = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
     const hourSlot = `${String(now.getHours()).padStart(2, '0')}:00`
+
+    if (!silent) setLoading(true)
 
     Promise.all([
       fetchJson(`${API}/stats`),
@@ -107,10 +110,20 @@ export default function Dashboard() {
           .sort((a, b) => a.reservation_datetime - b.reservation_datetime)
           .slice(0, 8)
         setUpcoming(future)
+        if (!silent) setError('')
       })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false))
-  }, [t.dashboard.serverReservationsErr, t.dashboard.serverStatsErr])
+      .catch((e) => {
+        if (!silent) setError(e.message)
+      })
+      .finally(() => {
+        if (!silent) setLoading(false)
+      })
+  }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
+  useAutoRefresh(load, { intervalMs: 15000 })
 
   if (loading) return (
     <div className="flex items-center justify-center h-full text-white/20 text-xs tracking-widest uppercase gap-3">

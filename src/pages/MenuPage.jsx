@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { T } from '../lib/i18n'
 import { fetchJson } from '../lib/api'
+import { useAutoRefresh } from '../lib/useAutoRefresh'
 
 const API = import.meta.env.VITE_API_BASE || 'https://merakibackend.vercel.app/api'
 
@@ -28,15 +29,28 @@ export default function MenuPage() {
   const [publishing, setPublishing] = useState(false)
   const [publishNotice, setPublishNotice] = useState('')
 
-  const load = () => {
-    setLoading(true)
-    fetchJson(`${API}/menu`)
-      .then((rows) => setItems(rows.map((r) => ({ ...r, _dirty: false }))))
-      .catch((e) => setError(e.message || t.menu.loadErr))
-      .finally(() => setLoading(false))
-  }
+  const hasDirtyDrafts = useMemo(() => items.some((item) => item._dirty), [items])
 
-  useEffect(load, [t.menu.loadErr])
+  const load = useCallback(({ silent = false } = {}) => {
+    if (silent && hasDirtyDrafts) return
+    if (!silent) setLoading(true)
+    fetchJson(`${API}/menu`)
+      .then((rows) => {
+        setItems(rows.map((r) => ({ ...r, _dirty: false })))
+        if (!silent) setError('')
+      })
+      .catch((e) => {
+        if (!silent) setError(e.message || t.menu.loadErr)
+      })
+      .finally(() => {
+        if (!silent) setLoading(false)
+      })
+  }, [hasDirtyDrafts, t.menu.loadErr])
+
+  useEffect(() => {
+    load()
+  }, [load])
+  useAutoRefresh(load, { intervalMs: 20000, enabled: !publishing && !savingId })
 
   const grouped = useMemo(() => {
     const map = new Map()

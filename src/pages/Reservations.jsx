@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { T, localeFor } from '../lib/i18n'
 import { fetchJson } from '../lib/api'
+import { useAutoRefresh } from '../lib/useAutoRefresh'
 
 const API = import.meta.env.VITE_API_BASE || 'https://merakibackend.vercel.app/api'
 const SLOT_CAP_GUESTS = 50
@@ -102,15 +103,25 @@ export default function Reservations() {
   const [opsNowSlot, setOpsNowSlot] = useState(null)
   const [opsNextSlot, setOpsNextSlot] = useState(null)
 
-  const load = () => {
-    setLoading(true)
+  const load = useCallback(({ silent = false } = {}) => {
+    if (!silent) setLoading(true)
     fetchJson(`${API}/reservations`)
-      .then(setAll)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false))
-  }
+      .then((rows) => {
+        setAll(rows)
+        if (!silent) setError('')
+      })
+      .catch((e) => {
+        if (!silent) setError(e.message || t.reservations.loadErr)
+      })
+      .finally(() => {
+        if (!silent) setLoading(false)
+      })
+  }, [t.reservations.loadErr])
 
-  useEffect(load, [t.reservations.loadErr])
+  useEffect(() => {
+    load()
+  }, [load])
+  useAutoRefresh(load, { intervalMs: 12000 })
 
   useEffect(() => {
     if (!slotDate || !slotTime) {

@@ -12,6 +12,29 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Keep native form popups in dark mode on Windows/Chromium */
+:root {
+  color-scheme: dark;
+}
+
+select,
+input[type="date"],
+input[type="time"] {
+  color-scheme: dark;
+}
+
+select,
+select option,
+select optgroup {
+  background-color: #101c2d;
+  color: #ffffff;
+}
+
+select option:checked {
+  background-color: #1b2f45;
+  color: #ffffff;
+}
+
 /* Recharts tooltip */
 .recharts-tooltip-wrapper { outline: none !important; }
 .custom-tooltip {
