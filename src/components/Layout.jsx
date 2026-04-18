@@ -13,9 +13,9 @@ export default function Layout() {
   }, [lang])
 
   return (
-    <div className="flex h-screen bg-[#0b1522] text-white overflow-hidden font-sans">
+    <div className="flex min-h-screen bg-[#0b1522] text-white font-sans">
       <Sidebar lang={lang} setLang={setLang} />
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 min-w-0 overflow-y-auto">
         <Outlet context={{ lang, setLang }} />
       </main>
     </div>

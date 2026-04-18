@@ -48,12 +48,12 @@ export default function Sidebar({ lang, setLang }) {
   const t = T[lang]
 
   return (
-    <aside className="w-56 bg-[#101c2d] border-r border-white/15 flex flex-col shrink-0">
+    <aside className="w-64 bg-[#101c2d] border-r border-white/15 flex flex-col shrink-0">
 
       {/* Brand */}
       <div className="px-6 py-6 border-b border-white/15">
         <p className="font-display italic text-[#8fd0ff] text-2xl tracking-widest">MERAKI</p>
-        <p className="text-white/70 text-[9px] tracking-[0.35em] uppercase mt-1">{t.app.admin}</p>
+        <p className="text-white/70 text-[10px] tracking-[0.2em] uppercase mt-1 break-words">{t.app.admin}</p>
       </div>
 
       {/* Navigation */}
@@ -63,15 +63,16 @@ export default function Sidebar({ lang, setLang }) {
             key={to}
             to={to}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-sm text-xs tracking-[0.15em] uppercase transition-all duration-200 ${
+              `flex items-center gap-3 px-3 py-2.5 rounded-sm text-[11px] tracking-[0.08em] transition-all duration-200 ${
                 isActive
                   ? 'bg-[#4d7ea8]/45 text-white border border-[#8fd0ff]/30'
                   : 'text-white/70 hover:text-white hover:bg-white/[0.08] border border-transparent'
               }`
             }
+            title={t.app[key]}
           >
             {icon}
-            {t.app[key]}
+            <span className="truncate">{t.app[key]}</span>
           </NavLink>
         ))}
       </nav>

@@ -154,12 +154,12 @@ export default function Dashboard() {
     <div className="p-8 space-y-8">
 
       {/* Header */}
-      <div className="flex items-end justify-between">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-[#8fd0ff] text-[10px] tracking-[0.5em] uppercase mb-1">{t.dashboard.panel}</p>
           <h1 className="text-3xl md:text-4xl font-semibold text-white leading-none">{t.app.dashboard}</h1>
         </div>
-        <p className="text-white/70 text-xs tracking-wide">{today}</p>
+        <p className="text-white/70 text-xs tracking-wide break-words text-right">{today}</p>
       </div>
 
       {/* KPI grid */}

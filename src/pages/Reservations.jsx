@@ -60,6 +60,23 @@ function RatingButtons({ value, onChange }) {
   )
 }
 
+function KpiCard({ label, value, tone = 'default' }) {
+  const toneCls = tone === 'good'
+    ? 'text-emerald-300'
+    : tone === 'warn'
+      ? 'text-red-300'
+      : tone === 'accent'
+        ? 'text-[#8fd0ff]'
+        : 'text-white'
+
+  return (
+    <div className="border border-white/15 bg-[#101c2d] px-4 py-3">
+      <p className={`text-2xl font-display italic ${toneCls}`}>{value}</p>
+      <p className="text-[9px] text-white/70 tracking-[0.22em] uppercase">{label}</p>
+    </div>
+  )
+}
+
 export default function Reservations() {
   const { lang } = useOutletContext()
   const t = T[lang]
@@ -235,31 +252,27 @@ export default function Reservations() {
     'bg-white/[0.08] border border-white/20 text-white text-xs px-3 py-2 outline-none ' +
     'focus:border-[#8fd0ff] transition-colors placeholder:text-white/40 rounded-sm'
 
+  const resetFilters = () => {
+    setSearch('')
+    setStatusF('all')
+    setDateFrom('')
+    setDateTo('')
+  }
+
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-end justify-between">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-[#8fd0ff] text-[10px] tracking-[0.5em] uppercase mb-1">{t.reservations.panel}</p>
           <h1 className="text-3xl md:text-4xl font-semibold text-white leading-none">{t.reservations.title}</h1>
         </div>
-        <div className="flex gap-5 text-right">
-          <div>
-            <p className="text-2xl font-display italic text-emerald-300">{active}</p>
-            <p className="text-[9px] text-white/70 tracking-widest uppercase">{t.common.active}</p>
-          </div>
-          <div>
-            <p className="text-2xl font-display italic text-red-300">{cancelled}</p>
-            <p className="text-[9px] text-white/70 tracking-widest uppercase">{t.common.cancelled}</p>
-          </div>
-          <div>
-            <p className="text-2xl font-display italic text-white">{filtered.length}</p>
-            <p className="text-[9px] text-white/70 tracking-widest uppercase">{t.common.all}</p>
-          </div>
-          <div>
-            <p className="text-2xl font-display italic text-[#8fd0ff]">{avgGuests}</p>
-            <p className="text-[9px] text-white/70 tracking-widest uppercase">{t.common.avgGuests}</p>
-          </div>
-        </div>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <KpiCard label={t.common.active} value={active} tone="good" />
+        <KpiCard label={t.common.cancelled} value={cancelled} tone="warn" />
+        <KpiCard label={t.common.all} value={filtered.length} />
+        <KpiCard label={t.common.avgGuests} value={avgGuests} tone="accent" />
       </div>
 
       <div className="border border-white/15 bg-[#101c2d] p-5 grid grid-cols-2 md:grid-cols-6 gap-3">
@@ -276,6 +289,13 @@ export default function Reservations() {
         </select>
         <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={inputCls + ' [color-scheme:dark]'} placeholder={t.reservations.from} />
         <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={inputCls + ' [color-scheme:dark]'} placeholder={t.reservations.to} />
+        <button
+          type="button"
+          onClick={resetFilters}
+          className="border border-white/30 text-white/80 hover:text-white hover:border-white/50 text-[10px] uppercase tracking-[0.18em] px-3 py-2 transition-colors"
+        >
+          {t.common.clearFilters}
+        </button>
         <input
           type="date"
           value={slotDate}
@@ -342,7 +362,7 @@ export default function Reservations() {
         <div className="px-5 py-3 border border-red-400/40 bg-red-500/15 text-red-100 text-sm">{t.common.error}: {error}</div>
       )}
 
-      <div className="border border-white/15 bg-[#101c2d]">
+      <div className="border border-white/15 bg-[#101c2d] min-w-0">
         {loading ? (
           <div className="flex items-center justify-center py-16 text-white/70 text-xs tracking-widest uppercase gap-3">
             <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -355,7 +375,7 @@ export default function Reservations() {
           <p className="text-center py-16 text-white/60 text-xs tracking-widest uppercase">{t.reservations.noRows}</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[980px]">
               <thead className="border-b border-white/15 bg-[#0b1522]">
                 <tr>
                   <td className="w-5" />
@@ -384,12 +404,12 @@ export default function Reservations() {
                       </p>
                       <p className="text-[#8fd0ff] text-[11px] tabular-nums font-medium">{r.reservation_time_hhmm}</p>
                     </td>
-                    <td className="py-3.5 pr-5">
-                      <p className="text-white text-xs font-medium">{r.full_name}</p>
+                    <td className="py-3.5 pr-5 max-w-[190px]">
+                      <p className="text-white text-xs font-medium truncate" title={r.full_name}>{r.full_name}</p>
                     </td>
-                    <td className="py-3.5 pr-5">
-                      <p className="text-white/85 text-[11px]">{r.email}</p>
-                      <p className="text-white/60 text-[10px]">{r.phone}</p>
+                    <td className="py-3.5 pr-5 max-w-[230px]">
+                      <p className="text-white/85 text-[11px] truncate" title={r.email}>{r.email}</p>
+                      <p className="text-white/60 text-[10px] truncate" title={r.phone}>{r.phone}</p>
                     </td>
                     <td className="py-3.5 pr-5 text-xs">
                       <p className="text-white">{r.guests_num}</p>
@@ -402,7 +422,7 @@ export default function Reservations() {
                         })
                         : '—'}
                     </td>
-                    <td className="py-3.5 pr-5 text-white/90 text-xs">{r.client_rating || '—'}/5</td>
+                    <td className="py-3.5 pr-5 text-white/90 text-xs">{r.client_rating ? `${r.client_rating}/5` : '—'}</td>
                     <td className="py-3.5 pr-5">
                       <Badge
                         status={r.status}
@@ -435,7 +455,7 @@ export default function Reservations() {
 
       {selectedReservation && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-[#101c2d] border border-white/20 p-8 max-w-xl w-full mx-4 space-y-6">
+          <div className="bg-[#101c2d] border border-white/20 p-6 md:p-8 max-w-xl w-full mx-4 space-y-6 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <h3 className="font-display italic text-2xl text-white">{t.reservations.detailsTitle}</h3>
               <button onClick={() => setSelectedReservation(null)} className="text-white/60 hover:text-white">✕</button>

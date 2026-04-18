@@ -25,6 +25,8 @@ export default function MenuPage() {
   const [error, setError] = useState('')
   const [savingId, setSavingId] = useState(null)
   const [newItem, setNewItem] = useState(emptyItem())
+  const [publishing, setPublishing] = useState(false)
+  const [publishNotice, setPublishNotice] = useState('')
 
   const load = () => {
     setLoading(true)
@@ -115,16 +117,46 @@ export default function MenuPage() {
 
   const inputCls = 'bg-white/[0.08] border border-white/20 text-white text-xs px-2 py-2 outline-none focus:border-[#8fd0ff] rounded-sm'
 
+  const publishMenu = async () => {
+    setPublishing(true)
+    setPublishNotice('')
+    try {
+      const payload = await fetchJson(`${API}/menu/publish`, { method: 'POST' })
+      setPublishNotice(
+        `${t.menu.publishOk} (${payload.items || 0} ${t.menu.publishItems})`
+      )
+    } catch (e) {
+      setError(e.message || t.menu.publishErr)
+    } finally {
+      setPublishing(false)
+    }
+  }
+
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <p className="text-[#8fd0ff] text-[10px] tracking-[0.5em] uppercase mb-1">{t.menu.panel}</p>
-        <h1 className="text-3xl md:text-4xl font-semibold text-white leading-none">{t.menu.title}</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[#8fd0ff] text-[10px] tracking-[0.5em] uppercase mb-1">{t.menu.panel}</p>
+          <h1 className="text-3xl md:text-4xl font-semibold text-white leading-none">{t.menu.title}</h1>
+        </div>
+        <button
+          disabled={publishing}
+          onClick={publishMenu}
+          className="bg-[#8fd0ff]/20 border border-[#8fd0ff]/40 text-[#b9e7ff] text-xs px-4 py-2 uppercase tracking-[0.2em] disabled:opacity-40"
+        >
+          {publishing ? t.menu.publishing : t.menu.publish}
+        </button>
       </div>
 
       {error && (
         <div className="px-5 py-3 border border-red-400/40 bg-red-500/15 text-red-100 text-sm">
           {t.common.error}: {error}
+        </div>
+      )}
+
+      {publishNotice && (
+        <div className="px-5 py-3 border border-emerald-300/35 bg-emerald-500/15 text-emerald-100 text-sm">
+          {publishNotice}
         </div>
       )}
 
