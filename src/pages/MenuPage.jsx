@@ -3,7 +3,6 @@ import { useOutletContext } from 'react-router-dom'
 import { tForLang } from '../lib/i18n'
 import { fetchJson } from '../lib/api'
 import { API_BASE } from '../lib/apiBase'
-import { useAutoRefresh } from '../lib/useAutoRefresh'
 
 function emptyItem() {
   return {
@@ -49,7 +48,6 @@ export default function MenuPage() {
   useEffect(() => {
     load()
   }, [load])
-  useAutoRefresh(load, { intervalMs: 20000, enabled: !publishing && !savingId })
 
   const grouped = useMemo(() => {
     const map = new Map()
@@ -156,14 +154,23 @@ export default function MenuPage() {
           <p className="mb-1 text-[10px] tracking-[0.2em] text-[#8fd0ff] uppercase sm:tracking-[0.28em]">{t.menu.panel}</p>
           <h1 className="text-2xl font-semibold leading-tight break-words text-white sm:text-3xl md:text-4xl">{t.menu.title}</h1>
         </div>
-        <button
-          type="button"
-          disabled={publishing}
-          onClick={publishMenu}
-          className="shrink-0 rounded-sm border border-[#8fd0ff]/40 bg-[#8fd0ff]/20 px-4 py-2.5 text-xs font-medium tracking-wide text-[#b9e7ff] uppercase min-[400px]:tracking-[0.15em] disabled:opacity-40"
-        >
-          {publishing ? t.menu.publishing : t.menu.publish}
-        </button>
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => load()}
+            className="rounded-sm border border-white/25 px-4 py-2.5 text-[10px] font-medium tracking-[0.15em] text-white/85 uppercase hover:border-[#8fd0ff] hover:text-white"
+          >
+            {t.common.refresh}
+          </button>
+          <button
+            type="button"
+            disabled={publishing}
+            onClick={publishMenu}
+            className="rounded-sm border border-[#8fd0ff]/40 bg-[#8fd0ff]/20 px-4 py-2.5 text-xs font-medium tracking-wide text-[#b9e7ff] uppercase min-[400px]:tracking-[0.15em] disabled:opacity-40"
+          >
+            {publishing ? t.menu.publishing : t.menu.publish}
+          </button>
+        </div>
       </div>
 
       {error && (

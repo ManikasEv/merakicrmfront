@@ -3,7 +3,6 @@ import { useOutletContext } from 'react-router-dom'
 import { tForLang, localeFor } from '../lib/i18n'
 import { fetchJson } from '../lib/api'
 import { API_BASE } from '../lib/apiBase'
-import { useAutoRefresh } from '../lib/useAutoRefresh'
 
 function RatingSelect({ value, disabled, onChange }) {
   return (
@@ -47,7 +46,6 @@ export default function Clients() {
   useEffect(() => {
     load()
   }, [load])
-  useAutoRefresh(load, { intervalMs: 15000 })
 
   const saveRating = async (clientId, rating) => {
     if (!clientId) return
@@ -87,7 +85,16 @@ export default function Clients() {
       <div className="flex flex-col gap-4 min-[500px]:flex-row min-[500px]:items-end min-[500px]:justify-between">
         <div className="min-w-0">
           <p className="mb-1 text-[10px] tracking-[0.25em] text-[#8fd0ff] uppercase sm:tracking-[0.4em]">{t.clients.panel}</p>
-          <h1 className="text-2xl font-semibold leading-tight text-white sm:text-3xl md:text-4xl">{t.clients.title}</h1>
+          <div className="flex flex-wrap items-end gap-3">
+            <h1 className="text-2xl font-semibold leading-tight text-white sm:text-3xl md:text-4xl">{t.clients.title}</h1>
+            <button
+              type="button"
+              onClick={() => load()}
+              className="text-[10px] tracking-[0.2em] uppercase px-4 py-2 border border-white/25 text-white/80 hover:border-[#8fd0ff] hover:text-white transition-colors rounded-sm"
+            >
+              {t.common.refresh}
+            </button>
+          </div>
         </div>
         <div className="grid grid-cols-3 gap-3 text-center min-[500px]:flex min-[500px]:gap-6 min-[500px]:text-right">
           <div>

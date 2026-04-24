@@ -64,6 +64,7 @@ export const T = {
       noNotes: '—',
       people: 'άτομα',
       clearFilters: 'Καθαρισμός φίλτρων',
+      refresh: 'Ανανέωση',
       language: 'Γλώσσα',
     },
     dashboard: {
@@ -211,6 +212,7 @@ export const T = {
       noNotes: '—',
       people: 'people',
       clearFilters: 'Clear filters',
+      refresh: 'Refresh',
       language: 'Language',
     },
     dashboard: {
@@ -358,6 +360,7 @@ export const T = {
       noNotes: '—',
       people: 'Personen',
       clearFilters: 'Filter zurücksetzen',
+      refresh: 'Aktualisieren',
       language: 'Sprache',
     },
     dashboard: {

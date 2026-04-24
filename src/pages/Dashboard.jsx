@@ -8,7 +8,6 @@ import {
 import { tForLang, localeFor, monthShort } from '../lib/i18n'
 import { fetchJson } from '../lib/api'
 import { API_BASE } from '../lib/apiBase'
-import { useAutoRefresh } from '../lib/useAutoRefresh'
 const CRM_MUTATE_SECRET = import.meta.env.VITE_CRM_MUTATE_SECRET || ''
 
 function todayIso() {
@@ -210,7 +209,6 @@ export default function Dashboard() {
   useEffect(() => {
     load()
   }, [load])
-  useAutoRefresh(load, { intervalMs: 15000 })
 
   if (loading) return (
     <div className="flex items-center justify-center h-full text-white/20 text-xs tracking-widest uppercase gap-3">
@@ -281,7 +279,16 @@ export default function Dashboard() {
           <p className="mb-1 text-[10px] tracking-[0.25em] text-[#8fd0ff] uppercase sm:tracking-[0.4em]">{t.dashboard.panel}</p>
           <h1 className="text-2xl font-semibold leading-tight text-white sm:text-3xl md:text-4xl">{t.app.dashboard}</h1>
         </div>
-        <p className="shrink-0 text-left text-xs tracking-wide text-white/70 min-[480px]:text-right break-words">{today}</p>
+        <div className="flex flex-wrap items-end gap-3 min-[480px]:justify-end">
+          <p className="shrink-0 text-left text-xs tracking-wide text-white/70 min-[480px]:text-right break-words">{today}</p>
+          <button
+            type="button"
+            onClick={() => { load(); loadWebPause(); }}
+            className="text-[10px] tracking-[0.2em] uppercase px-4 py-2 border border-white/25 text-white/80 hover:border-[#8fd0ff] hover:text-white transition-colors rounded-sm"
+          >
+            {t.common.refresh}
+          </button>
+        </div>
       </div>
 
       {/* Website booking pause (public form) */}
