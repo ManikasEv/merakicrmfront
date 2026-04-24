@@ -4,7 +4,21 @@ export const LANGUAGES = [
   { code: 'de', label: 'Deutsch' },
 ]
 
-export const DEFAULT_LANG = 'el'
+const LANG_SET = new Set(LANGUAGES.map((l) => l.code))
+
+/** Restaurant CRM default: German. Greek/English available from sidebar. */
+export const DEFAULT_LANG = 'de'
+
+/** Stale/unknown values in localStorage (e.g. after deploy) would break `T[lang]`. */
+export function resolveLang(stored) {
+  if (stored && LANG_SET.has(String(stored))) return String(stored)
+  return DEFAULT_LANG
+}
+
+export function tForLang(code) {
+  const key = resolveLang(code)
+  return T[key] || T.de
+}
 
 export function localeFor(lang) {
   if (lang === 'en') return 'en-GB'
@@ -50,6 +64,7 @@ export const T = {
       noNotes: '—',
       people: 'άτομα',
       clearFilters: 'Καθαρισμός φίλτρων',
+      language: 'Γλώσσα',
     },
     dashboard: {
       panel: 'Πίνακας Διαχείρισης',
@@ -89,7 +104,7 @@ export const T = {
       bookings: 'Κρατήσεις',
       serverStatsErr: 'Σφάλμα φόρτωσης στατιστικών',
       serverReservationsErr: 'Σφάλμα φόρτωσης κρατήσεων',
-      slotCapOffNote: 'Όριο 60 άτ. μόνο Παρ–Σαβ (2h παράθυρο) — σήμερα χωρίς online πλαφόν',
+      slotCapOffNote: 'Όριο ανά 2h μπλοκ μόνο Παρ–Σαβ — άλλες ημέρες χωρίς online πλαφόν',
       webBookingsTitle: 'Κρατήσεις από website',
       webBookingsOn: 'Δεχόμαστε online κρατήσεις',
       webBookingsPaused: 'Οι online κρατήσεις από το site είναι σε παύση',
@@ -129,7 +144,7 @@ export const T = {
       listByDate: 'Ημέρα',
       listAll: 'Όλες',
       listPeriod: 'Προβολή κατά περίοδο',
-      slotCrmNoCap: 'Χωρίς online πλαφόν 60 (όχι Παρ–Σαβ)',
+      slotCrmNoCap: 'Χωρίς weekend πλαφόν (όχι Παρ–Σαβ)',
     },
     clients: {
       panel: 'Πελατολόγιο',
@@ -196,6 +211,7 @@ export const T = {
       noNotes: '—',
       people: 'people',
       clearFilters: 'Clear filters',
+      language: 'Language',
     },
     dashboard: {
       panel: 'Admin Panel',
@@ -235,7 +251,7 @@ export const T = {
       bookings: 'Bookings',
       serverStatsErr: 'Failed to load stats',
       serverReservationsErr: 'Failed to load reservations',
-      slotCapOffNote: '60 cap Fri–Sat only (2h window) — no online cap other days',
+      slotCapOffNote: '2h block cap (Fri–Sat only) — no online cap other days',
       webBookingsTitle: 'Website bookings',
       webBookingsOn: 'Accepting online reservations',
       webBookingsPaused: 'Online reservations from the website are paused',
@@ -275,7 +291,7 @@ export const T = {
       listByDate: 'Pick date',
       listAll: 'All',
       listPeriod: 'Show by period',
-      slotCrmNoCap: 'No 60 cap (not Fri/Sat)',
+      slotCrmNoCap: 'No weekend cap (not Fri/Sat)',
     },
     clients: {
       panel: 'Customer Base',
@@ -342,6 +358,7 @@ export const T = {
       noNotes: '—',
       people: 'Personen',
       clearFilters: 'Filter zurücksetzen',
+      language: 'Sprache',
     },
     dashboard: {
       panel: 'Admin Panel',
@@ -381,7 +398,7 @@ export const T = {
       bookings: 'Buchungen',
       serverStatsErr: 'Fehler beim Laden der Statistiken',
       serverReservationsErr: 'Fehler beim Laden der Reservierungen',
-      slotCapOffNote: '60er-Limit nur Fr–Sa (2h) — sonst kein Online-Plafond',
+      slotCapOffNote: '2h-Block-Limit nur Fr–Sa — sonst kein Online-Plafond',
       webBookingsTitle: 'Webseiten-Reservierungen',
       webBookingsOn: 'Online-Reservierungen auf der Webseite aktiv',
       webBookingsPaused: 'Online-Reservierungen auf der Webseite pausiert',
@@ -421,7 +438,7 @@ export const T = {
       listByDate: 'Tag wählen',
       listAll: 'Alle',
       listPeriod: 'Zeitraum wählen',
-      slotCrmNoCap: 'Kein 60er-Limit (nicht Fr/Sa)',
+      slotCrmNoCap: 'Kein Wochenend-Limit (nicht Fr/Sa)',
     },
     clients: {
       panel: 'Kundenbasis',

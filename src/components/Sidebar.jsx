@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LANGUAGES, T } from '../lib/i18n'
+import { LANGUAGES, tForLang } from '../lib/i18n'
 
 const NAV = [
   {
@@ -44,11 +44,19 @@ const NAV = [
   },
 ]
 
-export default function Sidebar({ lang, setLang }) {
-  const t = T[lang]
+export default function Sidebar({ lang, setLang, mobileOpen, onCloseMobile }) {
+  const t = tForLang(lang)
+  const close = () => onCloseMobile?.()
 
   return (
-    <aside className="w-64 bg-[#101c2d] border-r border-white/15 flex flex-col shrink-0">
+    <aside
+      className={[
+        'z-50 flex w-[min(20rem,88vw)] max-w-[100vw] flex-col border-r border-white/15 bg-[#101c2d]',
+        'fixed inset-y-0 left-0 transition-transform duration-200 ease-out',
+        'md:static md:z-auto md:w-64 md:max-w-none md:translate-x-0 md:shrink-0',
+        mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+      ].join(' ')}
+    >
 
       {/* Brand */}
       <div className="px-6 py-6 border-b border-white/15">
@@ -62,23 +70,24 @@ export default function Sidebar({ lang, setLang }) {
           <NavLink
             key={to}
             to={to}
+            onClick={close}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-sm text-[11px] tracking-[0.08em] transition-all duration-200 ${
+              `flex min-h-[44px] items-center gap-3 rounded-sm px-3 py-2.5 text-[12px] tracking-wide transition-all duration-200 sm:text-[11px] sm:tracking-[0.08em] ${
                 isActive
-                  ? 'bg-[#4d7ea8]/45 text-white border border-[#8fd0ff]/30'
-                  : 'text-white/70 hover:text-white hover:bg-white/[0.08] border border-transparent'
+                  ? 'border border-[#8fd0ff]/30 bg-[#4d7ea8]/45 text-white'
+                  : 'border border-transparent text-white/80 hover:bg-white/[0.08] hover:text-white'
               }`
             }
             title={t.app[key]}
           >
             {icon}
-            <span className="truncate">{t.app[key]}</span>
+            <span className="min-w-0 flex-1 break-words">{t.app[key]}</span>
           </NavLink>
         ))}
       </nav>
 
       <div className="px-4 pb-4 space-y-2">
-        <p className="text-white/70 text-[9px] tracking-[0.3em] uppercase px-2">Language</p>
+        <p className="text-white/70 text-[9px] tracking-[0.2em] uppercase px-2">{t.common.language}</p>
         <div className="grid grid-cols-3 gap-1.5">
           {LANGUAGES.map((l) => (
             <button

@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import { T, localeFor } from '../lib/i18n'
+import { tForLang, localeFor } from '../lib/i18n'
 import { fetchJson } from '../lib/api'
+import { API_BASE } from '../lib/apiBase'
 import { useAutoRefresh } from '../lib/useAutoRefresh'
-
-const API = import.meta.env.VITE_API_BASE || 'https://merakibackend.vercel.app/api'
-const SLOT_CAP_GUESTS = 60
 const SLOT_TIMES = ['11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30']
 
 function todayIso() {
@@ -106,7 +104,7 @@ function KpiCard({ label, value, tone = 'default' }) {
 
 export default function Reservations() {
   const { lang } = useOutletContext()
-  const t = T[lang]
+  const t = tForLang(lang)
   const locale = localeFor(lang)
 
   const [all, setAll] = useState([])
@@ -132,17 +130,17 @@ export default function Reservations() {
 
   const reservationsListUrl = useCallback(() => {
     if (listMode === 'today') {
-      return `${API}/reservations?date=${encodeURIComponent(todayIso())}`
+      return `${API_BASE}/reservations?date=${encodeURIComponent(todayIso())}`
     }
     if (listMode === 'month') {
       const { from, to } = firstLastOfMonth()
-      return `${API}/reservations?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
+      return `${API_BASE}/reservations?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
     }
     if (listMode === 'date') {
       const d = listPickDate || todayIso()
-      return `${API}/reservations?date=${encodeURIComponent(d)}`
+      return `${API_BASE}/reservations?date=${encodeURIComponent(d)}`
     }
-    return `${API}/reservations`
+    return `${API_BASE}/reservations`
   }, [listMode, listPickDate])
 
   const load = useCallback(({ silent = false } = {}) => {
@@ -173,7 +171,7 @@ export default function Reservations() {
 
     let cancelled = false
     setSlotLoading(true)
-    fetchJson(`${API}/reservations/slot-load?date=${encodeURIComponent(slotDate)}&time=${encodeURIComponent(slotTime)}`)
+    fetchJson(`${API_BASE}/reservations/slot-load?date=${encodeURIComponent(slotDate)}&time=${encodeURIComponent(slotTime)}`)
       .then((payload) => {
         if (!cancelled) setSlotInfo(payload)
       })
@@ -197,8 +195,8 @@ export default function Reservations() {
     const nextHour = `${String(nextHourDate.getHours()).padStart(2, '0')}:00`
 
     Promise.all([
-      fetchJson(`${API}/reservations/slot-load?date=${encodeURIComponent(day)}&time=${encodeURIComponent(thisHour)}`),
-      fetchJson(`${API}/reservations/slot-load?date=${encodeURIComponent(day)}&time=${encodeURIComponent(nextHour)}`),
+      fetchJson(`${API_BASE}/reservations/slot-load?date=${encodeURIComponent(day)}&time=${encodeURIComponent(thisHour)}`),
+      fetchJson(`${API_BASE}/reservations/slot-load?date=${encodeURIComponent(day)}&time=${encodeURIComponent(nextHour)}`),
     ])
       .then(([nowSlot, nextSlot]) => {
         setOpsNowSlot(nowSlot)
@@ -212,7 +210,7 @@ export default function Reservations() {
 
   const cancel = async (id) => {
     try {
-      await fetchJson(`${API}/reservations/${id}`, { method: 'DELETE' })
+      await fetchJson(`${API_BASE}/reservations/${id}`, { method: 'DELETE' })
       setConfirmCancel(null)
       setSelectedReservation((prev) => (prev?.id === id ? { ...prev, status: 'cancelled' } : prev))
       load()
@@ -225,7 +223,7 @@ export default function Reservations() {
     if (!clientId) return
     setSavingRating(true)
     try {
-      await fetchJson(`${API}/clients/${clientId}/rating`, {
+      await fetchJson(`${API_BASE}/clients/${clientId}/rating`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rating }),
@@ -309,12 +307,10 @@ export default function Reservations() {
   }
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-[#8fd0ff] text-[10px] tracking-[0.5em] uppercase mb-1">{t.reservations.panel}</p>
-          <h1 className="text-3xl md:text-4xl font-semibold text-white leading-none">{t.reservations.title}</h1>
-        </div>
+    <div className="space-y-5 p-4 pb-10 sm:space-y-6 sm:p-6 md:p-8">
+      <div className="min-w-0">
+        <p className="mb-1 text-[10px] tracking-[0.25em] text-[#8fd0ff] uppercase sm:tracking-[0.4em]">{t.reservations.panel}</p>
+        <h1 className="text-2xl font-semibold leading-tight text-white sm:text-3xl md:text-4xl">{t.reservations.title}</h1>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -397,7 +393,7 @@ export default function Reservations() {
             {slotLoading && t.common.loading}
             {!slotLoading && slotInfo && (
               slotInfo.applies_cap
-                ? `${t.reservations.slotSummary}: ${slotInfo.current_guests}/${SLOT_CAP_GUESTS} ${t.common.people}`
+                ? `${t.reservations.slotSummary}: ${slotInfo.current_guests}/${slotInfo.slot_cap_guests ?? '—'} ${t.common.people}`
                 : `${t.reservations.slotSummary}: ${slotInfo.current_guests} ${t.common.people} — ${t.reservations.slotCrmNoCap}`
             )}
             {!slotLoading && !slotInfo && t.dashboard.slotUnavailable}
@@ -413,7 +409,9 @@ export default function Reservations() {
           <p className="text-[10px] tracking-[0.3em] uppercase text-white/45">{t.reservations.nowSlot}</p>
           <p className="text-lg text-emerald-300 font-semibold mt-1">
             {opsNowSlot
-              ? (opsNowSlot.applies_cap ? `${opsNowSlot.current_guests}/${SLOT_CAP_GUESTS}` : String(opsNowSlot.current_guests))
+              ? (opsNowSlot.applies_cap
+                ? `${opsNowSlot.current_guests}/${opsNowSlot.slot_cap_guests ?? '—'}`
+                : String(opsNowSlot.current_guests))
               : '—'}
           </p>
           <p className="text-[11px] text-white/60">{opsNowSlot?.time || '—'}</p>
@@ -422,7 +420,9 @@ export default function Reservations() {
           <p className="text-[10px] tracking-[0.3em] uppercase text-white/45">{t.reservations.nextHourSlot}</p>
           <p className="text-lg text-[#8fd0ff] font-semibold mt-1">
             {opsNextSlot
-              ? (opsNextSlot.applies_cap ? `${opsNextSlot.current_guests}/${SLOT_CAP_GUESTS}` : String(opsNextSlot.current_guests))
+              ? (opsNextSlot.applies_cap
+                ? `${opsNextSlot.current_guests}/${opsNextSlot.slot_cap_guests ?? '—'}`
+                : String(opsNextSlot.current_guests))
               : '—'}
           </p>
           <p className="text-[11px] text-white/60">{opsNextSlot?.time || '—'}</p>

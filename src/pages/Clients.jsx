@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import { T, localeFor } from '../lib/i18n'
+import { tForLang, localeFor } from '../lib/i18n'
 import { fetchJson } from '../lib/api'
+import { API_BASE } from '../lib/apiBase'
 import { useAutoRefresh } from '../lib/useAutoRefresh'
-
-const API = import.meta.env.VITE_API_BASE || 'https://merakibackend.vercel.app/api'
 
 function RatingSelect({ value, disabled, onChange }) {
   return (
@@ -21,7 +20,7 @@ function RatingSelect({ value, disabled, onChange }) {
 
 export default function Clients() {
   const { lang } = useOutletContext()
-  const t = T[lang]
+  const t = tForLang(lang)
   const locale = localeFor(lang)
 
   const [rows, setRows] = useState([])
@@ -32,7 +31,7 @@ export default function Clients() {
 
   const load = useCallback(({ silent = false } = {}) => {
     if (!silent) setLoading(true)
-    fetchJson(`${API}/clients`)
+    fetchJson(`${API_BASE}/clients`)
       .then((clients) => {
         setRows(clients)
         if (!silent) setError('')
@@ -54,7 +53,7 @@ export default function Clients() {
     if (!clientId) return
     setSavingId(clientId)
     try {
-      await fetchJson(`${API}/clients/${clientId}/rating`, {
+      await fetchJson(`${API_BASE}/clients/${clientId}/rating`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rating }),
@@ -84,24 +83,24 @@ export default function Clients() {
     'focus:border-[#8fd0ff] transition-colors placeholder:text-white/40 rounded-sm'
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-[#8fd0ff] text-[10px] tracking-[0.5em] uppercase mb-1">{t.clients.panel}</p>
-          <h1 className="text-3xl md:text-4xl font-semibold text-white leading-none">{t.clients.title}</h1>
+    <div className="space-y-5 p-4 pb-10 sm:space-y-6 sm:p-6 md:p-8">
+      <div className="flex flex-col gap-4 min-[500px]:flex-row min-[500px]:items-end min-[500px]:justify-between">
+        <div className="min-w-0">
+          <p className="mb-1 text-[10px] tracking-[0.25em] text-[#8fd0ff] uppercase sm:tracking-[0.4em]">{t.clients.panel}</p>
+          <h1 className="text-2xl font-semibold leading-tight text-white sm:text-3xl md:text-4xl">{t.clients.title}</h1>
         </div>
-        <div className="flex gap-6 text-right">
+        <div className="grid grid-cols-3 gap-3 text-center min-[500px]:flex min-[500px]:gap-6 min-[500px]:text-right">
           <div>
-            <p className="text-2xl font-display italic text-white">{totalClients}</p>
-            <p className="text-[9px] text-white/70 tracking-widest uppercase">{t.app.clients}</p>
+            <p className="text-xl font-display italic text-white min-[500px]:text-2xl">{totalClients}</p>
+            <p className="text-[8px] uppercase tracking-widest text-white/70 min-[500px]:text-[9px]">{t.app.clients}</p>
           </div>
           <div>
-            <p className="text-2xl font-display italic text-[#8fd0ff]">{totalReservations}</p>
-            <p className="text-[9px] text-white/70 tracking-widest uppercase">{t.clients.totalReservations}</p>
+            <p className="text-xl font-display italic text-[#8fd0ff] min-[500px]:text-2xl">{totalReservations}</p>
+            <p className="text-[8px] uppercase tracking-widest text-white/70 min-[500px]:text-[9px]">{t.clients.totalReservations}</p>
           </div>
           <div>
-            <p className="text-2xl font-display italic text-emerald-300">{totalGuests}</p>
-            <p className="text-[9px] text-white/70 tracking-widest uppercase">{t.clients.totalGuests}</p>
+            <p className="text-xl font-display italic text-emerald-300 min-[500px]:text-2xl">{totalGuests}</p>
+            <p className="text-[8px] uppercase tracking-widest text-white/70 min-[500px]:text-[9px]">{t.clients.totalGuests}</p>
           </div>
         </div>
       </div>
@@ -134,7 +133,7 @@ export default function Clients() {
           <p className="text-center py-16 text-white/60 text-xs tracking-widest uppercase">{t.clients.noRows}</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[720px] text-sm">
               <thead className="border-b border-white/15 bg-[#0b1522]">
                 <tr>
                   <th className="text-left text-[9px] tracking-[0.35em] uppercase text-white/60 py-3 pr-5 pl-6 font-normal">{t.common.name}</th>

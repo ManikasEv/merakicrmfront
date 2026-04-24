@@ -2,7 +2,8 @@
 
 @theme {
   --font-display: "Cormorant Garamond", serif;
-  --font-sans:    "DM Sans", sans-serif;
+  /* Noto Sans supports Greek/extended Latin; DM Sans for body where available */
+  --font-sans:    "DM Sans", "Noto Sans", "Segoe UI", system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -41,7 +42,7 @@ select option:checked {
   background: #101c2d;
   border: 1px solid rgba(143, 208, 255, 0.45);
   padding: 10px 14px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "DM Sans", "Noto Sans", "Segoe UI", system-ui, sans-serif;
   font-size: 12px;
   color: #fff;
   border-radius: 2px;

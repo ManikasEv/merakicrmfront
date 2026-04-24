@@ -5,11 +5,10 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
 } from 'recharts'
-import { T, localeFor, monthShort } from '../lib/i18n'
+import { tForLang, localeFor, monthShort } from '../lib/i18n'
 import { fetchJson } from '../lib/api'
+import { API_BASE } from '../lib/apiBase'
 import { useAutoRefresh } from '../lib/useAutoRefresh'
-
-const API = import.meta.env.VITE_API_BASE || 'https://merakibackend.vercel.app/api'
 const CRM_MUTATE_SECRET = import.meta.env.VITE_CRM_MUTATE_SECRET || ''
 
 function todayIso() {
@@ -97,7 +96,7 @@ function Section({ title, children }) {
 // ── Main ───────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const { lang } = useOutletContext()
-  const t = T[lang]
+  const t = tForLang(lang)
   const locale = localeFor(lang)
 
   const [statView, setStatView] = useState('rolling') // rolling | day | year
@@ -115,7 +114,7 @@ export default function Dashboard() {
   const [webToggleBusy, setWebToggleBusy] = useState(false)
 
   const loadWebPause = useCallback(() => {
-    fetchJson(`${API}/reservation-availability`)
+    fetchJson(`${API_BASE}/reservation-availability`)
       .then((a) => setWebPaused(Boolean(a.paused)))
       .catch(() => setWebPaused(false))
   }, [])
@@ -133,7 +132,7 @@ export default function Dashboard() {
     setWebToggleErr('')
     setWebToggleBusy(true)
     try {
-      await fetchJson(`${API}/crm/online-reservations-pause`, {
+      await fetchJson(`${API_BASE}/crm/online-reservations-pause`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -151,12 +150,12 @@ export default function Dashboard() {
 
   const buildStatsUrl = useCallback(() => {
     if (statView === 'day') {
-      return `${API}/stats?view=day&date=${encodeURIComponent(statDate)}`
+      return `${API_BASE}/stats?view=day&date=${encodeURIComponent(statDate)}`
     }
     if (statView === 'year') {
-      return `${API}/stats?view=year&year=${encodeURIComponent(String(statYear))}`
+      return `${API_BASE}/stats?view=year&year=${encodeURIComponent(String(statYear))}`
     }
-    return `${API}/stats?view=rolling`
+    return `${API_BASE}/stats?view=rolling`
   }, [statView, statDate, statYear])
 
   const load = useCallback(({ silent = false } = {}) => {
@@ -168,8 +167,8 @@ export default function Dashboard() {
 
     Promise.all([
       fetchJson(buildStatsUrl()),
-      fetchJson(`${API}/reservations`),
-      fetchJson(`${API}/reservations/slot-load?date=${encodeURIComponent(day)}&time=${encodeURIComponent(hourSlot)}`),
+      fetchJson(`${API_BASE}/reservations`),
+      fetchJson(`${API_BASE}/reservations/slot-load?date=${encodeURIComponent(day)}&time=${encodeURIComponent(hourSlot)}`),
     ])
       .then(([s, res, slot]) => {
         setStats(s)
@@ -274,15 +273,15 @@ export default function Dashboard() {
   for (let y = yTo; y >= yFrom; y -= 1) yearOptions.push(y)
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="space-y-6 p-4 pb-10 sm:space-y-8 sm:p-6 md:p-8">
 
       {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-[#8fd0ff] text-[10px] tracking-[0.5em] uppercase mb-1">{t.dashboard.panel}</p>
-          <h1 className="text-3xl md:text-4xl font-semibold text-white leading-none">{t.app.dashboard}</h1>
+      <div className="flex flex-col gap-2 min-[480px]:flex-row min-[480px]:items-end min-[480px]:justify-between min-[480px]:gap-3">
+        <div className="min-w-0">
+          <p className="mb-1 text-[10px] tracking-[0.25em] text-[#8fd0ff] uppercase sm:tracking-[0.4em]">{t.dashboard.panel}</p>
+          <h1 className="text-2xl font-semibold leading-tight text-white sm:text-3xl md:text-4xl">{t.app.dashboard}</h1>
         </div>
-        <p className="text-white/70 text-xs tracking-wide break-words text-right">{today}</p>
+        <p className="shrink-0 text-left text-xs tracking-wide text-white/70 min-[480px]:text-right break-words">{today}</p>
       </div>
 
       {/* Website booking pause (public form) */}
