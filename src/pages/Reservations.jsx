@@ -4,7 +4,7 @@ import { tForLang, localeFor } from '../lib/i18n'
 import { fetchJson } from '../lib/api'
 import { API_BASE } from '../lib/apiBase'
 import { useAutoRefresh } from '../lib/useAutoRefresh'
-const SLOT_TIMES = ['11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30']
+const SLOT_TIMES = ['11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00']
 
 function todayIso() {
   const d = new Date()
@@ -188,25 +188,32 @@ export default function Reservations() {
   }, [slotDate, slotTime])
 
   useEffect(() => {
-    const now = new Date()
-    const day = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-    const thisHour = `${String(now.getHours()).padStart(2, '0')}:00`
-    const nextHourDate = new Date(now.getTime() + 60 * 60 * 1000)
-    const nextHour = `${String(nextHourDate.getHours()).padStart(2, '0')}:00`
-
-    Promise.all([
-      fetchJson(`${API_BASE}/reservations/slot-load?date=${encodeURIComponent(day)}&time=${encodeURIComponent(thisHour)}`),
-      fetchJson(`${API_BASE}/reservations/slot-load?date=${encodeURIComponent(day)}&time=${encodeURIComponent(nextHour)}`),
-    ])
-      .then(([nowSlot, nextSlot]) => {
-        setOpsNowSlot(nowSlot)
-        setOpsNextSlot(nextSlot)
-      })
-      .catch(() => {
-        setOpsNowSlot(null)
-        setOpsNextSlot(null)
-      })
-  }, [all])
+    const loadOpsSlots = () => {
+      const now = new Date()
+      const day = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+      const thisHour = `${String(now.getHours()).padStart(2, '0')}:00`
+      const nextHourDate = new Date(now.getTime() + 60 * 60 * 1000)
+      const nextHour = `${String(nextHourDate.getHours()).padStart(2, '0')}:00`
+      return Promise.all([
+        fetchJson(`${API_BASE}/reservations/slot-load?date=${encodeURIComponent(day)}&time=${encodeURIComponent(thisHour)}`),
+        fetchJson(`${API_BASE}/reservations/slot-load?date=${encodeURIComponent(day)}&time=${encodeURIComponent(nextHour)}`),
+      ])
+    }
+    const run = () => {
+      loadOpsSlots()
+        .then(([nowSlot, nextSlot]) => {
+          setOpsNowSlot(nowSlot)
+          setOpsNextSlot(nextSlot)
+        })
+        .catch(() => {
+          setOpsNowSlot(null)
+          setOpsNextSlot(null)
+        })
+    }
+    run()
+    const t = setInterval(run, 60_000)
+    return () => clearInterval(t)
+  }, [])
 
   const cancel = async (id) => {
     try {

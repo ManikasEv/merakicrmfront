@@ -167,7 +167,7 @@ export default function Dashboard() {
 
     Promise.all([
       fetchJson(buildStatsUrl()),
-      fetchJson(`${API_BASE}/reservations`),
+      fetchJson(`${API_BASE}/reservations?from=${encodeURIComponent(day)}`),
       fetchJson(`${API_BASE}/reservations/slot-load?date=${encodeURIComponent(day)}&time=${encodeURIComponent(hourSlot)}`),
     ])
       .then(([s, res, slot]) => {
