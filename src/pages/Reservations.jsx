@@ -126,6 +126,8 @@ export default function Reservations() {
   const [slotLoading, setSlotLoading] = useState(false)
   const [opsNowSlot, setOpsNowSlot] = useState(null)
   const [opsNextSlot, setOpsNextSlot] = useState(null)
+  /** Narrow the table to the date+time chosen in the slot pickers (no extra API). */
+  const [filterListToSlot, setFilterListToSlot] = useState(false)
 
   const reservationsListUrl = useCallback(() => {
     if (listMode === 'today') {
@@ -271,6 +273,10 @@ export default function Reservations() {
     return normalized
       .filter((r) => {
         if (statusF !== 'all' && r.status !== statusF) return false
+        if (filterListToSlot) {
+          if (r.reservation_date_iso !== slotDate) return false
+          if (r.reservation_time_hhmm !== slotTime) return false
+        }
         if (q && ![r.first_name, r.last_name, r.email, r.phone]
           .some((f) => f?.toLowerCase().includes(q))) return false
         return true
@@ -287,7 +293,7 @@ export default function Reservations() {
         const cmp = (sorters[sort.key] || (() => 0))()
         return sort.dir === 'asc' ? cmp : -cmp
       })
-  }, [normalized, search, statusF, sort])
+  }, [normalized, search, statusF, sort, filterListToSlot, slotDate, slotTime])
 
   const active = filtered.filter((r) => r.status !== 'cancelled').length
   const cancelled = filtered.filter((r) => r.status === 'cancelled').length
@@ -395,9 +401,9 @@ export default function Reservations() {
             <option key={time} value={time}>{time}</option>
           ))}
         </select>
-        <div className="col-span-2 md:col-span-4 border border-white/10 bg-white/[0.03] px-4 py-3">
+        <div className="col-span-2 md:col-span-4 border border-white/10 bg-white/[0.03] px-4 py-3 space-y-3">
           <p className="text-[10px] tracking-[0.28em] uppercase text-white/40">{t.reservations.slotControl}</p>
-          <p className={`text-sm mt-1 ${slotInfo?.can_accept_request ? 'text-emerald-300' : 'text-amber-300'}`}>
+          <p className={`text-sm ${slotInfo?.can_accept_request ? 'text-emerald-300' : 'text-amber-300'}`}>
             {slotLoading && t.common.loading}
             {!slotLoading && slotInfo && (
               slotInfo.applies_cap
@@ -407,12 +413,21 @@ export default function Reservations() {
             {!slotLoading && !slotInfo && t.dashboard.slotUnavailable}
           </p>
           {!slotLoading && slotInfo?.applies_cap && !slotInfo.can_accept_request && (
-            <p className="text-xs text-amber-300/85 mt-1">{t.reservations.slotFullHint}</p>
+            <p className="text-xs text-amber-300/85">{t.reservations.slotFullHint}</p>
           )}
+          <label className="flex items-center gap-2.5 cursor-pointer text-[11px] text-white/65 max-w-md">
+            <input
+              type="checkbox"
+              className="rounded border-white/30 bg-[#101c2d] text-[#8fd0ff] focus:ring-[#8fd0ff]/50"
+              checked={filterListToSlot}
+              onChange={(e) => setFilterListToSlot(e.target.checked)}
+            />
+            {t.reservations.filterListToSlot}
+          </label>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-3">
+      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <div className="border border-white/15 bg-[#101c2d] px-4 py-3">
           <p className="text-[10px] tracking-[0.3em] uppercase text-white/45">{t.reservations.nowSlot}</p>
           <p className="text-lg text-emerald-300 font-semibold mt-1">
@@ -434,6 +449,23 @@ export default function Reservations() {
               : '—'}
           </p>
           <p className="text-[11px] text-white/60">{opsNextSlot?.time || '—'}</p>
+        </div>
+        <div className="border border-white/15 bg-[#101c2d] px-4 py-3">
+          <p className="text-[10px] tracking-[0.3em] uppercase text-white/45">{t.reservations.selectedSlotKpi}</p>
+          <p className="text-lg text-violet-300/95 font-semibold mt-1">
+            {slotLoading
+              ? '—'
+              : (slotInfo
+                ? (slotInfo.applies_cap
+                  ? `${slotInfo.current_guests}/${slotInfo.slot_cap_guests ?? '—'}`
+                  : String(slotInfo.current_guests))
+                : '—')}
+          </p>
+          <p className="text-[11px] text-white/60 tabular-nums">
+            {slotDate
+              ? `${new Date(`${slotDate}T12:00:00`).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: '2-digit' })} · ${slotTime}`
+              : '—'}
+          </p>
         </div>
         <div className="border border-white/15 bg-[#101c2d] px-4 py-3">
           <p className="text-[10px] tracking-[0.3em] uppercase text-white/45">{t.reservations.nextReservation}</p>

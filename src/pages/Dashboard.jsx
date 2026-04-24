@@ -1,3 +1,4 @@
+import { useUser } from '@clerk/clerk-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import {
@@ -97,6 +98,7 @@ export default function Dashboard() {
   const { lang } = useOutletContext()
   const t = tForLang(lang)
   const locale = localeFor(lang)
+  const { user, isLoaded: userLoaded } = useUser()
 
   const [statView, setStatView] = useState('rolling') // rolling | day | year
   const [statDate, setStatDate] = useState(todayIso)
@@ -290,6 +292,20 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+
+      {userLoaded && user && (
+        <div className="border border-white/15 bg-[#0b1522] px-4 py-4">
+          <p className="text-[10px] tracking-[0.35em] uppercase text-white/50 mb-2">{t.auth.signedInAs}</p>
+          <p className="text-sm text-white">
+            {[user.firstName, user.lastName].filter(Boolean).join(' ').trim() || '—'}
+          </p>
+          <p className="text-xs text-white/60 mt-1 break-all">
+            {user.primaryEmailAddress?.emailAddress
+              || user.emailAddresses?.[0]?.emailAddress
+              || '—'}
+          </p>
+        </div>
+      )}
 
       {/* Website booking pause (public form) */}
       <div className="border border-white/15 bg-[#0b1522] px-4 py-4 space-y-3">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
+import CrmUserSync from './CrmUserSync'
 import { tForLang, resolveLang } from '../lib/i18n'
 
 export default function Layout() {
@@ -32,6 +33,7 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen min-h-[100dvh] bg-[#0b1522] text-white font-sans">
+      <CrmUserSync />
       {mobileNavOpen && (
         <button
           type="button"

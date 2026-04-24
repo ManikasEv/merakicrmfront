@@ -1,3 +1,4 @@
+import { SignOutButton } from '@clerk/clerk-react'
 import { NavLink } from 'react-router-dom'
 import { LANGUAGES, tForLang } from '../lib/i18n'
 
@@ -85,6 +86,15 @@ export default function Sidebar({ lang, setLang, mobileOpen, onCloseMobile }) {
           </NavLink>
         ))}
       </nav>
+
+      <div className="px-4 pb-3">
+        <SignOutButton
+          signOutOptions={{ redirectUrl: '/sign-in' }}
+          className="w-full text-left text-[10px] tracking-[0.2em] uppercase px-3 py-2.5 rounded-sm border border-white/20 text-white/85 hover:bg-white/[0.08] hover:border-white/40 transition-colors"
+        >
+          {t.auth.signOut}
+        </SignOutButton>
+      </div>
 
       <div className="px-4 pb-4 space-y-2">
         <p className="text-white/70 text-[9px] tracking-[0.2em] uppercase px-2">{t.common.language}</p>

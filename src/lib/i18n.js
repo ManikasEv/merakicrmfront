@@ -35,6 +35,11 @@ export function monthShort(ym, lang) {
 export const T = {
   el: {
     app: { admin: 'CRM · Διαχείριση', dashboard: 'Ταμπλό', reservations: 'Κρατήσεις', clients: 'Πελάτες', menu: 'Μενού' },
+    auth: {
+      signInHeading: 'Σύνδεση CRM',
+      signedInAs: 'Συνδεδεμένος/η',
+      signOut: 'Αποσύνδεση',
+    },
     common: {
       loading: 'Φόρτωση...',
       error: 'Σφάλμα',
@@ -139,7 +144,9 @@ export const T = {
       slotFullHint: 'Το slot είναι πλήρες. Προτείνετε άλλο slot ή τηλεφωνική κράτηση.',
       nowSlot: 'Τώρα',
       nextHourSlot: 'Επόμενη ώρα',
+      selectedSlotKpi: 'Επιλεγμένος χρόνος',
       nextReservation: 'Επόμενη κράτηση',
+      filterListToSlot: 'Λίστα: μόνο αυτή η ώρα/ημέρα',
       listToday: 'Σήμερα',
       listMonth: 'Μήνας',
       listByDate: 'Ημέρα',
@@ -183,6 +190,11 @@ export const T = {
   },
   en: {
     app: { admin: 'CRM · Admin', dashboard: 'Dashboard', reservations: 'Reservations', clients: 'Clients', menu: 'Menu' },
+    auth: {
+      signInHeading: 'CRM sign-in',
+      signedInAs: 'Signed in as',
+      signOut: 'Sign out',
+    },
     common: {
       loading: 'Loading...',
       error: 'Error',
@@ -287,7 +299,9 @@ export const T = {
       slotFullHint: 'This slot is full. Suggest another slot or phone reservation.',
       nowSlot: 'Now',
       nextHourSlot: 'Next hour',
+      selectedSlotKpi: 'Chosen time',
       nextReservation: 'Next reservation',
+      filterListToSlot: 'List: only this date & time',
       listToday: 'Today',
       listMonth: 'Month',
       listByDate: 'Pick date',
@@ -331,6 +345,11 @@ export const T = {
   },
   de: {
     app: { admin: 'CRM · Admin', dashboard: 'Dashboard', reservations: 'Reservierungen', clients: 'Kunden', menu: 'Menü' },
+    auth: {
+      signInHeading: 'CRM Anmeldung',
+      signedInAs: 'Angemeldet als',
+      signOut: 'Abmelden',
+    },
     common: {
       loading: 'Laden...',
       error: 'Fehler',
@@ -435,7 +454,9 @@ export const T = {
       slotFullHint: 'Dieser Slot ist voll. Anderen Slot oder Telefonreservierung vorschlagen.',
       nowSlot: 'Jetzt',
       nextHourSlot: 'Nächste Stunde',
+      selectedSlotKpi: 'Gewählter Zeitslot',
       nextReservation: 'Nächste Reservierung',
+      filterListToSlot: 'Liste: nur dieses Datum & diese Uhrzeit',
       listToday: 'Heute',
       listMonth: 'Monat',
       listByDate: 'Tag wählen',
