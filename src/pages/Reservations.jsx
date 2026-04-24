@@ -5,7 +5,7 @@ import { fetchJson } from '../lib/api'
 import { useAutoRefresh } from '../lib/useAutoRefresh'
 
 const API = import.meta.env.VITE_API_BASE || 'https://merakibackend.vercel.app/api'
-const SLOT_CAP_GUESTS = 50
+const SLOT_CAP_GUESTS = 60
 const SLOT_TIMES = ['11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30']
 
 function todayIso() {
@@ -14,6 +14,32 @@ function todayIso() {
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
+}
+
+function firstLastOfMonth() {
+  const d = new Date()
+  const y = d.getFullYear()
+  const mon = d.getMonth()
+  const from = `${y}-${String(mon + 1).padStart(2, '0')}-01`
+  const last = new Date(y, mon + 1, 0).getDate()
+  const to = `${y}-${String(mon + 1).padStart(2, '0')}-${String(last).padStart(2, '0')}`
+  return { from, to }
+}
+
+function ListModeBtn({ active, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`text-[10px] tracking-[0.2em] uppercase px-4 py-2.5 border transition-colors rounded-sm ${
+        active
+          ? 'bg-[#4d7ea8]/30 border-[#8fd0ff] text-white'
+          : 'border-white/20 text-white/75 hover:border-white/40 hover:text-white'
+      }`}
+    >
+      {children}
+    </button>
+  )
 }
 
 const STATUS_CLS = {
@@ -89,8 +115,9 @@ export default function Reservations() {
 
   const [search, setSearch] = useState('')
   const [statusF, setStatusF] = useState('all')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
+  /** 'all' | 'today' | 'month' | 'date' — which slice to load from the API */
+  const [listMode, setListMode] = useState('all')
+  const [listPickDate, setListPickDate] = useState(todayIso)
   const [sort, setSort] = useState({ key: 'reservation_datetime', dir: 'desc' })
 
   const [confirmCancel, setConfirmCancel] = useState(null)
@@ -103,9 +130,24 @@ export default function Reservations() {
   const [opsNowSlot, setOpsNowSlot] = useState(null)
   const [opsNextSlot, setOpsNextSlot] = useState(null)
 
+  const reservationsListUrl = useCallback(() => {
+    if (listMode === 'today') {
+      return `${API}/reservations?date=${encodeURIComponent(todayIso())}`
+    }
+    if (listMode === 'month') {
+      const { from, to } = firstLastOfMonth()
+      return `${API}/reservations?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
+    }
+    if (listMode === 'date') {
+      const d = listPickDate || todayIso()
+      return `${API}/reservations?date=${encodeURIComponent(d)}`
+    }
+    return `${API}/reservations`
+  }, [listMode, listPickDate])
+
   const load = useCallback(({ silent = false } = {}) => {
     if (!silent) setLoading(true)
-    fetchJson(`${API}/reservations`)
+    fetchJson(reservationsListUrl())
       .then((rows) => {
         setAll(rows)
         if (!silent) setError('')
@@ -116,7 +158,7 @@ export default function Reservations() {
       .finally(() => {
         if (!silent) setLoading(false)
       })
-  }, [t.reservations.loadErr])
+  }, [reservationsListUrl, t.reservations.loadErr])
 
   useEffect(() => {
     load()
@@ -230,8 +272,6 @@ export default function Reservations() {
     return normalized
       .filter((r) => {
         if (statusF !== 'all' && r.status !== statusF) return false
-        if (dateFrom && r.reservation_date_iso < dateFrom) return false
-        if (dateTo && r.reservation_date_iso > dateTo) return false
         if (q && ![r.first_name, r.last_name, r.email, r.phone]
           .some((f) => f?.toLowerCase().includes(q))) return false
         return true
@@ -248,7 +288,7 @@ export default function Reservations() {
         const cmp = (sorters[sort.key] || (() => 0))()
         return sort.dir === 'asc' ? cmp : -cmp
       })
-  }, [normalized, search, statusF, dateFrom, dateTo, sort])
+  }, [normalized, search, statusF, sort])
 
   const active = filtered.filter((r) => r.status !== 'cancelled').length
   const cancelled = filtered.filter((r) => r.status === 'cancelled').length
@@ -266,8 +306,6 @@ export default function Reservations() {
   const resetFilters = () => {
     setSearch('')
     setStatusF('all')
-    setDateFrom('')
-    setDateTo('')
   }
 
   return (
@@ -286,7 +324,38 @@ export default function Reservations() {
         <KpiCard label={t.common.avgGuests} value={avgGuests} tone="accent" />
       </div>
 
-      <div className="border border-white/15 bg-[#101c2d] p-5 grid grid-cols-2 md:grid-cols-6 gap-3">
+      <div className="border border-white/15 bg-[#0b1522] p-4 space-y-3">
+        <p className="text-[10px] tracking-[0.35em] uppercase text-white/50">{t.reservations.listPeriod}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <ListModeBtn
+            active={listMode === 'today' || (listMode === 'date' && listPickDate === todayIso())}
+            onClick={() => { setListMode('today'); setListPickDate(todayIso()) }}
+          >
+            {t.reservations.listToday}
+          </ListModeBtn>
+          <ListModeBtn active={listMode === 'month'} onClick={() => setListMode('month')}>
+            {t.reservations.listMonth}
+          </ListModeBtn>
+          <ListModeBtn
+            active={listMode === 'date' && listPickDate !== todayIso()}
+            onClick={() => { setListMode('date') }}
+          >
+            {t.reservations.listByDate}
+          </ListModeBtn>
+          <input
+            type="date"
+            value={listPickDate}
+            onChange={(e) => { setListPickDate(e.target.value); setListMode('date') }}
+            className={inputCls + ' [color-scheme:dark]'}
+            title={t.reservations.from}
+          />
+          <ListModeBtn active={listMode === 'all'} onClick={() => setListMode('all')}>
+            {t.reservations.listAll}
+          </ListModeBtn>
+        </div>
+      </div>
+
+      <div className="border border-white/15 bg-[#101c2d] p-5 grid grid-cols-2 md:grid-cols-4 gap-3">
         <input
           placeholder={t.reservations.search}
           value={search}
@@ -298,8 +367,6 @@ export default function Reservations() {
           <option value="confirmed">{t.reservations.statusConfirmed}</option>
           <option value="cancelled">{t.reservations.statusCancelled}</option>
         </select>
-        <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={inputCls + ' [color-scheme:dark]'} placeholder={t.reservations.from} />
-        <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={inputCls + ' [color-scheme:dark]'} placeholder={t.reservations.to} />
         <button
           type="button"
           onClick={resetFilters}
@@ -324,14 +391,18 @@ export default function Reservations() {
             <option key={time} value={time}>{time}</option>
           ))}
         </select>
-        <div className="col-span-2 md:col-span-6 border border-white/10 bg-white/[0.03] px-4 py-3">
+        <div className="col-span-2 md:col-span-4 border border-white/10 bg-white/[0.03] px-4 py-3">
           <p className="text-[10px] tracking-[0.28em] uppercase text-white/40">{t.reservations.slotControl}</p>
           <p className={`text-sm mt-1 ${slotInfo?.can_accept_request ? 'text-emerald-300' : 'text-amber-300'}`}>
             {slotLoading && t.common.loading}
-            {!slotLoading && slotInfo && `${t.reservations.slotSummary}: ${slotInfo.current_guests}/${SLOT_CAP_GUESTS} ${t.common.people}`}
+            {!slotLoading && slotInfo && (
+              slotInfo.applies_cap
+                ? `${t.reservations.slotSummary}: ${slotInfo.current_guests}/${SLOT_CAP_GUESTS} ${t.common.people}`
+                : `${t.reservations.slotSummary}: ${slotInfo.current_guests} ${t.common.people} — ${t.reservations.slotCrmNoCap}`
+            )}
             {!slotLoading && !slotInfo && t.dashboard.slotUnavailable}
           </p>
-          {!slotLoading && slotInfo && !slotInfo.can_accept_request && (
+          {!slotLoading && slotInfo?.applies_cap && !slotInfo.can_accept_request && (
             <p className="text-xs text-amber-300/85 mt-1">{t.reservations.slotFullHint}</p>
           )}
         </div>
@@ -341,14 +412,18 @@ export default function Reservations() {
         <div className="border border-white/15 bg-[#101c2d] px-4 py-3">
           <p className="text-[10px] tracking-[0.3em] uppercase text-white/45">{t.reservations.nowSlot}</p>
           <p className="text-lg text-emerald-300 font-semibold mt-1">
-            {opsNowSlot ? `${opsNowSlot.current_guests}/${SLOT_CAP_GUESTS}` : '—'}
+            {opsNowSlot
+              ? (opsNowSlot.applies_cap ? `${opsNowSlot.current_guests}/${SLOT_CAP_GUESTS}` : String(opsNowSlot.current_guests))
+              : '—'}
           </p>
           <p className="text-[11px] text-white/60">{opsNowSlot?.time || '—'}</p>
         </div>
         <div className="border border-white/15 bg-[#101c2d] px-4 py-3">
           <p className="text-[10px] tracking-[0.3em] uppercase text-white/45">{t.reservations.nextHourSlot}</p>
           <p className="text-lg text-[#8fd0ff] font-semibold mt-1">
-            {opsNextSlot ? `${opsNextSlot.current_guests}/${SLOT_CAP_GUESTS}` : '—'}
+            {opsNextSlot
+              ? (opsNextSlot.applies_cap ? `${opsNextSlot.current_guests}/${SLOT_CAP_GUESTS}` : String(opsNextSlot.current_guests))
+              : '—'}
           </p>
           <p className="text-[11px] text-white/60">{opsNextSlot?.time || '—'}</p>
         </div>
