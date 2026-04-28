@@ -114,14 +114,32 @@ export default function Dashboard() {
   const [webToggleErr, setWebToggleErr] = useState('')
   const [webToggleBusy, setWebToggleBusy] = useState(false)
 
+  const [blockedDates, setBlockedDates] = useState([])
+  const [blockedDateDraft, setBlockedDateDraft] = useState(todayIso)
+  const [blockedBusy, setBlockedBusy] = useState(false)
+  const [blockedErr, setBlockedErr] = useState('')
+
   const loadWebPause = useCallback(() => {
     fetchJson(`${API_BASE}/reservation-availability`)
       .then((a) => setWebPaused(Boolean(a.paused)))
       .catch(() => setWebPaused(false))
   }, [])
 
+  const loadBlockedDates = useCallback(() => {
+    if (!CRM_MUTATE_SECRET) {
+      setBlockedDates([])
+      return Promise.resolve()
+    }
+    return fetchJson(`${API_BASE}/crm/blocked-dates`, {
+      headers: { 'X-CRM-Secret': CRM_MUTATE_SECRET },
+    })
+      .then((r) => setBlockedDates(Array.isArray(r?.dates) ? r.dates : []))
+      .catch(() => setBlockedDates([]))
+  }, [])
+
   useEffect(() => {
     loadWebPause()
+    loadBlockedDates()
   }, [loadWebPause])
 
   const toggleWebPause = async () => {
@@ -146,6 +164,50 @@ export default function Dashboard() {
       setWebToggleErr(e.message || 'Request failed')
     } finally {
       setWebToggleBusy(false)
+    }
+  }
+
+  const addBlockedDate = async () => {
+    if (!CRM_MUTATE_SECRET) {
+      setBlockedErr(t.dashboard.webBookingsKeyMissing)
+      return
+    }
+    setBlockedErr('')
+    setBlockedBusy(true)
+    try {
+      const r = await fetchJson(`${API_BASE}/crm/blocked-dates`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CRM-Secret': CRM_MUTATE_SECRET,
+        },
+        body: JSON.stringify({ date: blockedDateDraft }),
+      })
+      setBlockedDates(Array.isArray(r?.dates) ? r.dates : [])
+    } catch (e) {
+      setBlockedErr(e.message || 'Request failed')
+    } finally {
+      setBlockedBusy(false)
+    }
+  }
+
+  const removeBlockedDate = async (date) => {
+    if (!CRM_MUTATE_SECRET) {
+      setBlockedErr(t.dashboard.webBookingsKeyMissing)
+      return
+    }
+    setBlockedErr('')
+    setBlockedBusy(true)
+    try {
+      const r = await fetchJson(`${API_BASE}/crm/blocked-dates/${encodeURIComponent(date)}`, {
+        method: 'DELETE',
+        headers: { 'X-CRM-Secret': CRM_MUTATE_SECRET },
+      })
+      setBlockedDates(Array.isArray(r?.dates) ? r.dates : [])
+    } catch (e) {
+      setBlockedErr(e.message || 'Request failed')
+    } finally {
+      setBlockedBusy(false)
     }
   }
 
@@ -330,6 +392,61 @@ export default function Dashboard() {
         )}
         {webToggleErr && (
           <p className="text-[11px] text-red-300/90">{webToggleErr}</p>
+        )}
+      </div>
+
+      {/* Block website bookings by date */}
+      <div className="border border-white/15 bg-[#0b1522] px-4 py-4 space-y-3">
+        <p className="text-[10px] tracking-[0.35em] uppercase text-white/50">{t.dashboard.blockedDatesTitle}</p>
+        <p className="text-[11px] text-white/60">{t.dashboard.blockedDatesHint}</p>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            type="date"
+            value={blockedDateDraft}
+            onChange={(e) => setBlockedDateDraft(e.target.value)}
+            className="bg-white/[0.08] border border-white/20 text-white text-xs px-3 py-2 outline-none focus:border-[#8fd0ff] rounded-sm [color-scheme:dark]"
+          />
+          <button
+            type="button"
+            disabled={blockedBusy}
+            onClick={addBlockedDate}
+            className="text-[10px] tracking-[0.2em] uppercase px-4 py-2.5 border border-white/25 text-white/90 hover:border-[#8fd0ff] hover:text-white transition-colors rounded-sm disabled:opacity-40"
+          >
+            {blockedBusy ? t.common.loading : t.dashboard.blockedDatesAdd}
+          </button>
+          <button
+            type="button"
+            disabled={blockedBusy}
+            onClick={() => loadBlockedDates()}
+            className="text-[10px] tracking-[0.2em] uppercase px-4 py-2.5 border border-white/15 text-white/70 hover:border-white/30 hover:text-white transition-colors rounded-sm disabled:opacity-40"
+          >
+            {t.common.refresh}
+          </button>
+        </div>
+
+        {blockedErr && (
+          <p className="text-[11px] text-red-300/90">{blockedErr}</p>
+        )}
+
+        {blockedDates.length === 0 ? (
+          <p className="text-[11px] text-white/35">{t.dashboard.blockedDatesEmpty}</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {blockedDates.map((d) => (
+              <div key={d.date} className="flex items-center gap-2 border border-white/15 bg-white/[0.03] px-3 py-2 rounded-sm">
+                <span className="text-xs text-white/80 tabular-nums">{d.date}</span>
+                <button
+                  type="button"
+                  disabled={blockedBusy}
+                  onClick={() => removeBlockedDate(d.date)}
+                  className="text-[10px] tracking-[0.18em] uppercase text-white/50 hover:text-white/80 transition-colors disabled:opacity-40"
+                >
+                  {t.dashboard.blockedDatesRemove}
+                </button>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
