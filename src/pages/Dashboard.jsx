@@ -396,7 +396,7 @@ export default function Dashboard() {
       <div className="flex flex-col gap-2 min-[480px]:flex-row min-[480px]:items-end min-[480px]:justify-between min-[480px]:gap-3">
         <div className="min-w-0">
           <p className="mb-1 text-[10px] tracking-[0.25em] text-[#8fd0ff] uppercase sm:tracking-[0.4em]">{t.dashboard.panel}</p>
-          <h1 className="text-2xl font-semibold leading-tight text-white sm:text-3xl md:text-4xl">{t.app.dashboard}</h1>
+          <h1 className="text-[1.7rem] font-semibold leading-tight tracking-tight text-white sm:text-[2rem] md:text-4xl">{t.app.dashboard}</h1>
         </div>
         <div className="flex flex-wrap items-end gap-3 min-[480px]:justify-end">
           <p className="shrink-0 text-left text-xs tracking-wide text-white/70 min-[480px]:text-right break-words">{today}</p>
