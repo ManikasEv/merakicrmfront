@@ -342,23 +342,10 @@ export default function Dashboard() {
     load()
   }, [load])
 
-  if (loading) return (
-    <div className="flex items-center justify-center h-full text-white/20 text-xs tracking-widest uppercase gap-3">
-      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-      </svg>
-      {t.common.loading}
-    </div>
-  )
-
-  if (error) return (
-    <div className="m-8 px-5 py-4 border border-red-500/30 bg-red-500/10 text-red-300 text-sm">
-      {t.common.error}: {error}
-    </div>
-  )
-
-  const { summary, monthly, byHour, byWeekday } = stats
+  const summary = stats?.summary || null
+  const monthly = stats?.monthly || []
+  const byHour = stats?.byHour || []
+  const byWeekday = stats?.byWeekday || []
   const viewMode = stats?.meta?.view || 'rolling'
   const today = new Date().toLocaleDateString(locale, {
     weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
@@ -463,127 +450,145 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Block website bookings by date */}
-      <div className="border border-white/15 bg-[#0b1522] px-4 py-4 space-y-3">
-        <p className="text-[10px] tracking-[0.35em] uppercase text-white/50">{t.dashboard.blockedDatesTitle}</p>
-        <p className="text-[11px] text-white/60">{t.dashboard.blockedDatesHint}</p>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <input
-            type="date"
-            value={blockedDateDraft}
-            onChange={(e) => setBlockedDateDraft(e.target.value)}
-            className="bg-white/[0.08] border border-white/20 text-white text-xs px-3 py-2 outline-none focus:border-[#8fd0ff] rounded-sm [color-scheme:dark]"
-          />
-          <button
-            type="button"
-            disabled={blockedBusy}
-            onClick={addBlockedDate}
-            className="text-[10px] tracking-[0.2em] uppercase px-4 py-2.5 border border-white/25 text-white/90 hover:border-[#8fd0ff] hover:text-white transition-colors rounded-sm disabled:opacity-40"
-          >
-            {blockedBusy ? t.common.loading : t.dashboard.blockedDatesAdd}
-          </button>
-          <button
-            type="button"
-            disabled={blockedBusy}
-            onClick={() => loadBlockedDates()}
-            className="text-[10px] tracking-[0.2em] uppercase px-4 py-2.5 border border-white/15 text-white/70 hover:border-white/30 hover:text-white transition-colors rounded-sm disabled:opacity-40"
-          >
-            {t.common.refresh}
-          </button>
+      {/* Block website bookings: full day or specific hour */}
+      <div className="border border-[#8fd0ff]/25 bg-[#0b1522] px-4 py-4 space-y-5">
+        <div>
+          <p className="text-[10px] tracking-[0.35em] uppercase text-[#8fd0ff]">{t.dashboard.blockedDatesTitle}</p>
+          <p className="text-[11px] text-white/60 mt-1">{t.dashboard.blockedDatesHint}</p>
         </div>
 
-        {blockedErr && (
-          <p className="text-[11px] text-red-300/90">{blockedErr}</p>
-        )}
-
-        {blockedDates.length === 0 ? (
-          <p className="text-[11px] text-white/35">{t.dashboard.blockedDatesEmpty}</p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {blockedDates.map((d) => (
-              <div key={d.date} className="flex items-center gap-2 border border-white/15 bg-white/[0.03] px-3 py-2 rounded-sm">
-                <span className="text-xs text-white/80 tabular-nums">{d.date}</span>
-                <button
-                  type="button"
-                  disabled={blockedBusy}
-                  onClick={() => removeBlockedDate(d.date)}
-                  className="text-[10px] tracking-[0.18em] uppercase text-white/50 hover:text-white/80 transition-colors disabled:opacity-40"
-                >
-                  {t.dashboard.blockedDatesRemove}
-                </button>
-              </div>
-            ))}
+        <div className="space-y-2">
+          <p className="text-[10px] tracking-[0.28em] uppercase text-white/45">{t.dashboard.blockedDatesAdd}</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              type="date"
+              value={blockedDateDraft}
+              onChange={(e) => setBlockedDateDraft(e.target.value)}
+              className="bg-white/[0.08] border border-white/20 text-white text-xs px-3 py-2 outline-none focus:border-[#8fd0ff] rounded-sm [color-scheme:dark]"
+            />
+            <button
+              type="button"
+              disabled={blockedBusy}
+              onClick={addBlockedDate}
+              className="text-[10px] tracking-[0.2em] uppercase px-4 py-2.5 border border-white/25 text-white/90 hover:border-[#8fd0ff] hover:text-white transition-colors rounded-sm disabled:opacity-40"
+            >
+              {blockedBusy ? t.common.loading : t.dashboard.blockedDatesAdd}
+            </button>
+            <button
+              type="button"
+              disabled={blockedBusy}
+              onClick={() => loadBlockedDates()}
+              className="text-[10px] tracking-[0.2em] uppercase px-4 py-2.5 border border-white/15 text-white/70 hover:border-white/30 hover:text-white transition-colors rounded-sm disabled:opacity-40"
+            >
+              {t.common.refresh}
+            </button>
           </div>
-        )}
-      </div>
-
-      {/* Block website bookings by hour */}
-      <div className="border border-white/15 bg-[#0b1522] px-4 py-4 space-y-3">
-        <p className="text-[10px] tracking-[0.35em] uppercase text-white/50">{t.dashboard.blockedSlotsTitle}</p>
-        <p className="text-[11px] text-white/60">{t.dashboard.blockedSlotsHint}</p>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <input
-            type="date"
-            value={blockedSlotDateDraft}
-            onChange={(e) => setBlockedSlotDateDraft(e.target.value)}
-            className="bg-white/[0.08] border border-white/20 text-white text-xs px-3 py-2 outline-none focus:border-[#8fd0ff] rounded-sm [color-scheme:dark]"
-          />
-          <select
-            value={blockedSlotTimeDraft}
-            onChange={(e) => setBlockedSlotTimeDraft(e.target.value)}
-            aria-label={t.dashboard.blockedSlotsTime}
-            className="bg-white/[0.08] border border-white/20 text-white text-xs px-3 py-2 outline-none focus:border-[#8fd0ff] rounded-sm [color-scheme:dark]"
-          >
-            {BOOKABLE_TIMES.map((time) => (
-              <option key={time} value={time} className="bg-[#0b1522] text-white">
-                {time}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            disabled={blockedSlotBusy}
-            onClick={addBlockedSlot}
-            className="text-[10px] tracking-[0.2em] uppercase px-4 py-2.5 border border-white/25 text-white/90 hover:border-[#8fd0ff] hover:text-white transition-colors rounded-sm disabled:opacity-40"
-          >
-            {blockedSlotBusy ? t.common.loading : t.dashboard.blockedSlotsAdd}
-          </button>
-          <button
-            type="button"
-            disabled={blockedSlotBusy}
-            onClick={() => loadBlockedSlots()}
-            className="text-[10px] tracking-[0.2em] uppercase px-4 py-2.5 border border-white/15 text-white/70 hover:border-white/30 hover:text-white transition-colors rounded-sm disabled:opacity-40"
-          >
-            {t.common.refresh}
-          </button>
+          {blockedErr && (
+            <p className="text-[11px] text-red-300/90">{blockedErr}</p>
+          )}
+          {blockedDates.length === 0 ? (
+            <p className="text-[11px] text-white/35">{t.dashboard.blockedDatesEmpty}</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {blockedDates.map((d) => (
+                <div key={d.date} className="flex items-center gap-2 border border-white/15 bg-white/[0.03] px-3 py-2 rounded-sm">
+                  <span className="text-xs text-white/80 tabular-nums">{d.date}</span>
+                  <button
+                    type="button"
+                    disabled={blockedBusy}
+                    onClick={() => removeBlockedDate(d.date)}
+                    className="text-[10px] tracking-[0.18em] uppercase text-white/50 hover:text-white/80 transition-colors disabled:opacity-40"
+                  >
+                    {t.dashboard.blockedDatesRemove}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {blockedSlotErr && (
-          <p className="text-[11px] text-red-300/90">{blockedSlotErr}</p>
-        )}
-
-        {blockedSlots.length === 0 ? (
-          <p className="text-[11px] text-white/35">{t.dashboard.blockedSlotsEmpty}</p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {blockedSlots.map((s) => (
-              <div key={`${s.date}-${s.time}`} className="flex items-center gap-2 border border-white/15 bg-white/[0.03] px-3 py-2 rounded-sm">
-                <span className="text-xs text-white/80 tabular-nums">{s.date} · {String(s.time || '').slice(0, 5)}</span>
-                <button
-                  type="button"
-                  disabled={blockedSlotBusy}
-                  onClick={() => removeBlockedSlot(s.date, String(s.time || '').slice(0, 5))}
-                  className="text-[10px] tracking-[0.18em] uppercase text-white/50 hover:text-white/80 transition-colors disabled:opacity-40"
-                >
-                  {t.dashboard.blockedDatesRemove}
-                </button>
-              </div>
-            ))}
+        <div className="border-t border-white/10 pt-4 space-y-2">
+          <p className="text-[10px] tracking-[0.28em] uppercase text-[#8fd0ff]">{t.dashboard.blockedSlotsTitle}</p>
+          <p className="text-[11px] text-white/60">{t.dashboard.blockedSlotsHint}</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              type="date"
+              value={blockedSlotDateDraft}
+              onChange={(e) => setBlockedSlotDateDraft(e.target.value)}
+              className="bg-white/[0.08] border border-white/20 text-white text-xs px-3 py-2 outline-none focus:border-[#8fd0ff] rounded-sm [color-scheme:dark]"
+            />
+            <select
+              value={blockedSlotTimeDraft}
+              onChange={(e) => setBlockedSlotTimeDraft(e.target.value)}
+              aria-label={t.dashboard.blockedSlotsTime}
+              className="bg-white/[0.08] border border-white/20 text-white text-xs px-3 py-2 outline-none focus:border-[#8fd0ff] rounded-sm [color-scheme:dark]"
+            >
+              {BOOKABLE_TIMES.map((time) => (
+                <option key={time} value={time} className="bg-[#0b1522] text-white">
+                  {time}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              disabled={blockedSlotBusy}
+              onClick={addBlockedSlot}
+              className="text-[10px] tracking-[0.2em] uppercase px-4 py-2.5 bg-[#314f6f] border border-[#8fd0ff]/40 text-white hover:bg-[#4a7aa0] transition-colors rounded-sm disabled:opacity-40"
+            >
+              {blockedSlotBusy ? t.common.loading : t.dashboard.blockedSlotsAdd}
+            </button>
+            <button
+              type="button"
+              disabled={blockedSlotBusy}
+              onClick={() => loadBlockedSlots()}
+              className="text-[10px] tracking-[0.2em] uppercase px-4 py-2.5 border border-white/15 text-white/70 hover:border-white/30 hover:text-white transition-colors rounded-sm disabled:opacity-40"
+            >
+              {t.common.refresh}
+            </button>
           </div>
-        )}
+          {blockedSlotErr && (
+            <p className="text-[11px] text-red-300/90">{blockedSlotErr}</p>
+          )}
+          {blockedSlots.length === 0 ? (
+            <p className="text-[11px] text-white/35">{t.dashboard.blockedSlotsEmpty}</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {blockedSlots.map((s) => (
+                <div key={`${s.date}-${s.time}`} className="flex items-center gap-2 border border-[#8fd0ff]/20 bg-white/[0.03] px-3 py-2 rounded-sm">
+                  <span className="text-xs text-white/80 tabular-nums">{s.date} · {String(s.time || '').slice(0, 5)}</span>
+                  <button
+                    type="button"
+                    disabled={blockedSlotBusy}
+                    onClick={() => removeBlockedSlot(s.date, String(s.time || '').slice(0, 5))}
+                    className="text-[10px] tracking-[0.18em] uppercase text-white/50 hover:text-white/80 transition-colors disabled:opacity-40"
+                  >
+                    {t.dashboard.blockedDatesRemove}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
+      {loading && (
+        <div className="flex items-center justify-center py-10 text-white/20 text-xs tracking-widest uppercase gap-3">
+          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+          {t.common.loading}
+        </div>
+      )}
+
+      {error && !loading && (
+        <div className="px-5 py-4 border border-red-500/30 bg-red-500/10 text-red-300 text-sm">
+          {t.common.error}: {error}
+        </div>
+      )}
+
+      {!loading && !error && stats && (
+      <>
 
       {/* CRM stats mode */}
       <div className="border border-white/15 bg-[#0b1522] px-4 py-4 space-y-3">
@@ -807,6 +812,8 @@ export default function Dashboard() {
           </div>
         )}
       </Section>
+      </>
+      )}
 
     </div>
   )
