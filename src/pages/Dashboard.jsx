@@ -11,6 +11,11 @@ import { fetchJson } from '../lib/api'
 import { API_BASE } from '../lib/apiBase'
 const CRM_MUTATE_SECRET = import.meta.env.VITE_CRM_MUTATE_SECRET || ''
 
+const BOOKABLE_TIMES = [
+  '11:00', '11:30', '12:00', '12:30', '13:00',
+  '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30',
+]
+
 function todayIso() {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -119,6 +124,12 @@ export default function Dashboard() {
   const [blockedBusy, setBlockedBusy] = useState(false)
   const [blockedErr, setBlockedErr] = useState('')
 
+  const [blockedSlots, setBlockedSlots] = useState([])
+  const [blockedSlotDateDraft, setBlockedSlotDateDraft] = useState(todayIso)
+  const [blockedSlotTimeDraft, setBlockedSlotTimeDraft] = useState('19:00')
+  const [blockedSlotBusy, setBlockedSlotBusy] = useState(false)
+  const [blockedSlotErr, setBlockedSlotErr] = useState('')
+
   const loadWebPause = useCallback(() => {
     fetchJson(`${API_BASE}/reservation-availability`)
       .then((a) => setWebPaused(Boolean(a.paused)))
@@ -137,10 +148,23 @@ export default function Dashboard() {
       .catch(() => setBlockedDates([]))
   }, [])
 
+  const loadBlockedSlots = useCallback(() => {
+    if (!CRM_MUTATE_SECRET) {
+      setBlockedSlots([])
+      return Promise.resolve()
+    }
+    return fetchJson(`${API_BASE}/crm/blocked-slots`, {
+      headers: { 'X-CRM-Secret': CRM_MUTATE_SECRET },
+    })
+      .then((r) => setBlockedSlots(Array.isArray(r?.slots) ? r.slots : []))
+      .catch(() => setBlockedSlots([]))
+  }, [])
+
   useEffect(() => {
     loadWebPause()
     loadBlockedDates()
-  }, [loadWebPause])
+    loadBlockedSlots()
+  }, [loadWebPause, loadBlockedDates, loadBlockedSlots])
 
   const toggleWebPause = async () => {
     if (!CRM_MUTATE_SECRET) {
@@ -208,6 +232,50 @@ export default function Dashboard() {
       setBlockedErr(e.message || 'Request failed')
     } finally {
       setBlockedBusy(false)
+    }
+  }
+
+  const addBlockedSlot = async () => {
+    if (!CRM_MUTATE_SECRET) {
+      setBlockedSlotErr(t.dashboard.webBookingsKeyMissing)
+      return
+    }
+    setBlockedSlotErr('')
+    setBlockedSlotBusy(true)
+    try {
+      const r = await fetchJson(`${API_BASE}/crm/blocked-slots`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CRM-Secret': CRM_MUTATE_SECRET,
+        },
+        body: JSON.stringify({ date: blockedSlotDateDraft, time: blockedSlotTimeDraft }),
+      })
+      setBlockedSlots(Array.isArray(r?.slots) ? r.slots : [])
+    } catch (e) {
+      setBlockedSlotErr(e.message || 'Request failed')
+    } finally {
+      setBlockedSlotBusy(false)
+    }
+  }
+
+  const removeBlockedSlot = async (date, time) => {
+    if (!CRM_MUTATE_SECRET) {
+      setBlockedSlotErr(t.dashboard.webBookingsKeyMissing)
+      return
+    }
+    setBlockedSlotErr('')
+    setBlockedSlotBusy(true)
+    try {
+      const r = await fetchJson(`${API_BASE}/crm/blocked-slots/${encodeURIComponent(date)}/${encodeURIComponent(time)}`, {
+        method: 'DELETE',
+        headers: { 'X-CRM-Secret': CRM_MUTATE_SECRET },
+      })
+      setBlockedSlots(Array.isArray(r?.slots) ? r.slots : [])
+    } catch (e) {
+      setBlockedSlotErr(e.message || 'Request failed')
+    } finally {
+      setBlockedSlotBusy(false)
     }
   }
 
@@ -440,6 +508,73 @@ export default function Dashboard() {
                   type="button"
                   disabled={blockedBusy}
                   onClick={() => removeBlockedDate(d.date)}
+                  className="text-[10px] tracking-[0.18em] uppercase text-white/50 hover:text-white/80 transition-colors disabled:opacity-40"
+                >
+                  {t.dashboard.blockedDatesRemove}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Block website bookings by hour */}
+      <div className="border border-white/15 bg-[#0b1522] px-4 py-4 space-y-3">
+        <p className="text-[10px] tracking-[0.35em] uppercase text-white/50">{t.dashboard.blockedSlotsTitle}</p>
+        <p className="text-[11px] text-white/60">{t.dashboard.blockedSlotsHint}</p>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            type="date"
+            value={blockedSlotDateDraft}
+            onChange={(e) => setBlockedSlotDateDraft(e.target.value)}
+            className="bg-white/[0.08] border border-white/20 text-white text-xs px-3 py-2 outline-none focus:border-[#8fd0ff] rounded-sm [color-scheme:dark]"
+          />
+          <select
+            value={blockedSlotTimeDraft}
+            onChange={(e) => setBlockedSlotTimeDraft(e.target.value)}
+            aria-label={t.dashboard.blockedSlotsTime}
+            className="bg-white/[0.08] border border-white/20 text-white text-xs px-3 py-2 outline-none focus:border-[#8fd0ff] rounded-sm [color-scheme:dark]"
+          >
+            {BOOKABLE_TIMES.map((time) => (
+              <option key={time} value={time} className="bg-[#0b1522] text-white">
+                {time}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            disabled={blockedSlotBusy}
+            onClick={addBlockedSlot}
+            className="text-[10px] tracking-[0.2em] uppercase px-4 py-2.5 border border-white/25 text-white/90 hover:border-[#8fd0ff] hover:text-white transition-colors rounded-sm disabled:opacity-40"
+          >
+            {blockedSlotBusy ? t.common.loading : t.dashboard.blockedSlotsAdd}
+          </button>
+          <button
+            type="button"
+            disabled={blockedSlotBusy}
+            onClick={() => loadBlockedSlots()}
+            className="text-[10px] tracking-[0.2em] uppercase px-4 py-2.5 border border-white/15 text-white/70 hover:border-white/30 hover:text-white transition-colors rounded-sm disabled:opacity-40"
+          >
+            {t.common.refresh}
+          </button>
+        </div>
+
+        {blockedSlotErr && (
+          <p className="text-[11px] text-red-300/90">{blockedSlotErr}</p>
+        )}
+
+        {blockedSlots.length === 0 ? (
+          <p className="text-[11px] text-white/35">{t.dashboard.blockedSlotsEmpty}</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {blockedSlots.map((s) => (
+              <div key={`${s.date}-${s.time}`} className="flex items-center gap-2 border border-white/15 bg-white/[0.03] px-3 py-2 rounded-sm">
+                <span className="text-xs text-white/80 tabular-nums">{s.date} · {String(s.time || '').slice(0, 5)}</span>
+                <button
+                  type="button"
+                  disabled={blockedSlotBusy}
+                  onClick={() => removeBlockedSlot(s.date, String(s.time || '').slice(0, 5))}
                   className="text-[10px] tracking-[0.18em] uppercase text-white/50 hover:text-white/80 transition-colors disabled:opacity-40"
                 >
                   {t.dashboard.blockedDatesRemove}
